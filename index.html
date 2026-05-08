@@ -8,89 +8,181 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#FAF9F6;--card:#FFFFFF;--card2:#F3F0EB;--border:#DDD5C8;--text:#2D2420;--text2:#7A6E63;--accent:#7B2332;--accent2:#621A28;--gold:#C8A54E;--gold2:#B8943E;--green:#2D8A4E;--red:#C0392B;--yellow:#D4A017;--orange:#D97706}
-body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
-.sidebar{width:240px;min-height:100vh;background:var(--accent);border-right:none;padding:16px 0;position:fixed;top:0;left:0;overflow-y:auto;z-index:10}
-.sidebar h1{font-family:'Playfair Display',Georgia,serif;font-size:20px;padding:0 16px 16px;border-bottom:1px solid rgba(255,255,255,.15);margin-bottom:8px;color:var(--gold);letter-spacing:.5px}
-.sidebar .nav-item{padding:10px 16px;cursor:pointer;font-size:14px;color:rgba(255,255,255,.7);transition:all .15s;border-left:3px solid transparent}
-.sidebar .nav-item:hover{background:rgba(255,255,255,.1);color:#fff}
-.sidebar .nav-item.active{background:rgba(255,255,255,.15);color:#fff;border-left-color:var(--gold);font-weight:600}
-.sidebar .nav-group{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,.4);padding:16px 16px 6px}
-.main{margin-left:240px;flex:1;padding:24px;min-height:100vh}
-.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px}
-.topbar h2{font-size:22px;font-weight:700;color:var(--accent)}
-.btn{padding:8px 16px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
-.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:var(--accent2)}
-.btn-danger{background:var(--red);color:#fff;opacity:.85}.btn-danger:hover{opacity:1}
-.btn-sm{padding:5px 10px;font-size:12px}
+:root{
+  --bg:#F0F2F5;
+  --card:#FFFFFF;
+  --card2:#F7F8FA;
+  --border:#E2E5EA;
+  --text:#1A1D23;
+  --text2:#6B7280;
+  --text3:#9CA3AF;
+  --accent:#4F46E5;
+  --accent2:#4338CA;
+  --accent-light:rgba(79,70,229,.08);
+  --gold:#D97706;
+  --green:#059669;
+  --red:#DC2626;
+  --yellow:#D97706;
+  --orange:#EA580C;
+  --purple:var(--purple);
+  --sidebar-bg:linear-gradient(180deg,#4F46E5 0%,#6D5FED 50%,#8B7CF7 100%);
+  --sidebar-hover:rgba(255,255,255,.12);
+  --sidebar-active:rgba(255,255,255,.2);
+  --radius:10px;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
+  --shadow-lg:0 10px 25px rgba(0,0,0,.1);
+}
+body{font-family:'Inter','Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;-webkit-font-smoothing:antialiased}
+
+/* ── Sidebar ── */
+.sidebar{width:220px;min-height:100vh;background:linear-gradient(180deg,#4338CA 0%,#5B4FD9 40%,#7C6FE8 100%);position:fixed;top:0;left:0;overflow-y:auto;z-index:10;display:flex;flex-direction:column;border-right:none;transition:width .2s ease}
+.sidebar.collapsed{width:56px}
+.sidebar.collapsed h1 span,.sidebar.collapsed .nav-group,.sidebar.collapsed .nav-item .label{display:none}
+.sidebar.collapsed h1{padding:12px 8px;justify-content:center}
+.sidebar.collapsed h1::before{width:28px;height:28px;border-radius:6px}
+.sidebar.collapsed .nav-item{justify-content:center;padding:10px 0;margin:1px 6px}
+.sidebar.collapsed .nav-item .icon{width:auto}
+.sidebar-toggle{position:absolute;top:18px;right:-14px;width:28px;height:28px;border-radius:50%;background:var(--card);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text2);z-index:11;box-shadow:0 2px 6px rgba(0,0,0,.1);transition:transform .2s}
+.sidebar-toggle:hover{background:var(--card2)}
+.sidebar h1{font-size:16px;font-weight:800;padding:16px 14px 14px;color:#fff;letter-spacing:-.3px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,.15)}
+.sidebar h1::before{content:'';display:block;width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--purple));flex-shrink:0}
+.sidebar .nav-group{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,.4);padding:18px 14px 4px;font-weight:600}
+.sidebar .nav-item{padding:8px 14px;cursor:pointer;font-size:13px;color:rgba(255,255,255,.65);transition:all .2s;border-radius:7px;margin:1px 8px;display:flex;align-items:center;gap:8px;font-weight:500}
+.sidebar .nav-item:hover{background:rgba(255,255,255,.12);color:#fff}
+.sidebar .nav-item.active{background:rgba(255,255,255,.2);color:#fff;font-weight:600}
+.sidebar .nav-item .icon{font-size:16px;width:22px;text-align:center;flex-shrink:0}
+
+/* ── Main ── */
+.main{margin-left:220px;flex:1;padding:16px 20px;min-height:100vh;transition:margin-left .2s ease}
+.sidebar.collapsed~.main{margin-left:56px}
+
+/* ── Top bar ── */
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.topbar h2{font-size:24px;font-weight:700;color:var(--text);letter-spacing:-.3px}
+
+/* ── Buttons ── */
+.btn{padding:9px 18px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s;display:inline-flex;align-items:center;gap:6px;letter-spacing:-.01em}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 1px 3px rgba(79,70,229,.3)}.btn-primary:hover{background:var(--accent2);box-shadow:0 2px 8px rgba(79,70,229,.35)}
+.btn-danger{background:var(--red);color:#fff;opacity:.9}.btn-danger:hover{opacity:1}
+.btn-sm{padding:5px 12px;font-size:12px;border-radius:6px}
 .btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}.btn-ghost:hover{background:var(--card2);color:var(--text)}
-table{width:100%;border-collapse:collapse;background:var(--card);border-radius:8px;overflow:hidden;font-size:13px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
-thead{background:var(--accent)}
-th{padding:10px 12px;text-align:left;font-weight:600;color:rgba(255,255,255,.9);font-size:12px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
-td{padding:8px 12px;border-top:1px solid var(--border);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-tr:hover td{background:rgba(123,35,50,.04)}
-.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
-.badge-green{background:rgba(45,138,78,.12);color:var(--green)}
-.badge-red{background:rgba(192,57,43,.12);color:var(--red)}
-.badge-yellow{background:rgba(212,160,23,.12);color:var(--yellow)}
-.badge-blue{background:rgba(123,35,50,.1);color:var(--accent)}
-.badge-orange{background:rgba(217,119,6,.12);color:var(--orange)}
-.search-box{padding:8px 12px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px;width:280px}
-.search-box:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(123,35,50,.1)}
-.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(45,36,32,.5);display:flex;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(2px)}
-.modal{background:var(--card);border-radius:12px;padding:24px;width:90%;max-width:700px;max-height:85vh;overflow-y:auto;border:1px solid var(--border);box-shadow:0 20px 60px rgba(0,0,0,.15)}
-.modal h3{font-size:18px;margin-bottom:16px;color:var(--accent)}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.form-group{display:flex;flex-direction:column;gap:4px}
+
+/* ── Tables ── */
+table{width:100%;border-collapse:collapse;background:var(--card);border-radius:var(--radius);overflow:hidden;font-size:13px;box-shadow:var(--shadow)}
+thead{background:var(--card2)}
+th{padding:11px 14px;text-align:left;font-weight:600;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;border-bottom:2px solid var(--border)}
+td{padding:10px 14px;border-top:1px solid var(--border);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+tr:hover td{background:var(--accent-light)}
+
+/* ── Badges ── */
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-green{background:rgba(5,150,105,.1);color:var(--green)}
+.badge-red{background:rgba(220,38,38,.1);color:var(--red)}
+.badge-yellow{background:rgba(217,119,6,.1);color:var(--yellow)}
+.badge-blue{background:rgba(79,70,229,.1);color:var(--accent)}
+.badge-orange{background:rgba(234,88,12,.1);color:var(--orange)}
+
+/* ── Search ── */
+.search-box{padding:9px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px;width:280px;transition:all .2s}
+.search-box:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,70,229,.1)}
+
+/* ── Modal ── */
+
+.drawer-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.3);z-index:50;backdrop-filter:blur(2px);opacity:1;transition:opacity .2s}
+.drawer{position:fixed;top:0;right:0;width:460px;max-width:90vw;height:100vh;background:var(--card);box-shadow:-8px 0 30px rgba(0,0,0,.12);z-index:51;overflow-y:auto;animation:slideIn .2s ease}
+@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+.drawer-close{position:absolute;top:12px;right:14px;width:32px;height:32px;border-radius:8px;border:none;background:rgba(255,255,255,.2);color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:1}
+.drawer-close:hover{background:rgba(255,255,255,.35)}
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(4px)}
+.modal{background:var(--card);border-radius:16px;padding:28px;width:90%;max-width:720px;max-height:85vh;overflow-y:auto;box-shadow:var(--shadow-lg)}
+.modal h3{font-size:18px;margin-bottom:20px;color:var(--text);font-weight:700}
+
+/* ── Forms ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-group{display:flex;flex-direction:column;gap:5px}
 .form-group.full{grid-column:1/-1}
 .form-group label{font-size:12px;color:var(--text2);font-weight:600}
-.form-group input,.form-group select,.form-group textarea{padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px}
-.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(123,35,50,.1)}
-.form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
-.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px}
-.stat-card{background:var(--card);border-radius:8px;padding:16px;border:1px solid var(--border);box-shadow:0 1px 3px rgba(0,0,0,.04)}
-.stat-card .label{font-size:12px;color:var(--text2);margin-bottom:4px}
-.stat-card .value{font-size:24px;font-weight:700}
+.form-group input,.form-group select,.form-group textarea{padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;transition:all .2s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,70,229,.1)}
+.form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+
+/* ── Stats ── */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:24px}
+.stat-card{background:var(--card);border-radius:var(--radius);padding:18px 20px;border:1px solid var(--border);box-shadow:var(--shadow);transition:transform .15s}
+.stat-card:hover{transform:translateY(-1px)}
+.stat-card .label{font-size:12px;color:var(--text2);margin-bottom:6px;font-weight:500}
+.stat-card .value{font-size:26px;font-weight:700;letter-spacing:-.5px}
 .stat-card .value.green{color:var(--green)}.stat-card .value.red{color:var(--red)}.stat-card .value.blue{color:var(--accent)}.stat-card .value.orange{color:var(--orange)}
-.month-tabs{display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap}
-.month-tab{padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px;background:var(--card);border:1px solid var(--border);color:var(--text2);transition:all .15s}
-.month-tab:hover{background:var(--card2);color:var(--text)}
-.month-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* ── Month tabs ── */
+.month-tabs{display:flex;gap:4px;margin-bottom:18px;flex-wrap:wrap}
+.month-tab{padding:7px 16px;border-radius:8px;cursor:pointer;font-size:13px;background:var(--card);border:1px solid var(--border);color:var(--text2);transition:all .2s;font-weight:500}
+.month-tab:hover{background:var(--card2);color:var(--text);border-color:var(--text3)}
+.month-tab.active{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 2px 6px rgba(79,70,229,.25)}
 .month-tab .count{font-size:11px;opacity:.7;margin-left:4px}
-.scroll-table{overflow-x:auto;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
-.view-toggle{display:flex;gap:4px;background:var(--card);border-radius:6px;padding:3px;border:1px solid var(--border)}
-.view-btn{padding:6px 12px;border-radius:4px;border:none;cursor:pointer;font-size:13px;background:transparent;color:var(--text2);transition:all .15s}
-.view-btn:hover{color:var(--text)}.view-btn.active{background:var(--accent);color:#fff}
+
+/* ── Scroll table ── */
+.scroll-table{overflow-x:auto;border-radius:var(--radius);box-shadow:var(--shadow)}
+
+/* ── View toggle ── */
+.view-toggle{display:flex;gap:2px;background:var(--card);border-radius:8px;padding:3px;border:1px solid var(--border)}
+.view-btn{padding:7px 14px;border-radius:6px;border:none;cursor:pointer;font-size:13px;background:transparent;color:var(--text2);transition:all .2s;font-weight:500}
+.view-btn:hover{color:var(--text)}.view-btn.active{background:var(--accent);color:#fff;box-shadow:0 1px 3px rgba(79,70,229,.2)}
 .view-btn:disabled{opacity:.4;cursor:not-allowed}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
-.cal-header{padding:8px;text-align:center;font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase}
-.cal-day{min-height:100px;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:6px;font-size:12px;position:relative;overflow:hidden}
-.plan-grid{display:grid;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.06)}
-.plan-header{background:var(--accent);color:#fff;padding:8px 10px;font-size:12px;font-weight:700;text-align:center;border-right:1px solid rgba(255,255,255,.15);white-space:nowrap}
-.plan-row-header{background:var(--card2);padding:8px 10px;font-size:12px;font-weight:600;border-right:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.plan-cell{min-height:52px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:3px;position:relative;display:flex;flex-direction:column;gap:2px}
-.plan-block{padding:3px 6px;border-radius:4px;font-size:10px;line-height:1.3;cursor:default;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.plan-block.tour{background:rgba(123,35,50,.12);color:var(--accent);border-left:3px solid var(--accent)}
-.plan-block.rental{background:rgba(217,119,6,.12);color:var(--orange);border-left:3px solid var(--orange)}
-.plan-block.conflict{background:rgba(192,57,43,.15);color:var(--red);border-left:3px solid var(--red)}
-.plan-free{color:var(--green);font-size:10px;opacity:.5;text-align:center;padding:4px}
-.plan-week-nav{display:flex;align-items:center;gap:12px;margin-bottom:16px}
-.plan-week-nav button{padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--card);cursor:pointer;font-size:13px;color:var(--text)}
-.plan-week-nav button:hover{background:var(--card2)}
-.plan-week-nav .week-label{font-size:15px;font-weight:700;color:var(--accent)}
-.plan-legend{display:flex;gap:16px;margin-bottom:12px;flex-wrap:wrap}
-.plan-legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)}
-.plan-legend-dot{width:12px;height:12px;border-radius:3px}
+
+/* ── Calendar grid ── */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-header{padding:10px;text-align:center;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+.cal-day{min-height:110px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px;font-size:12px;position:relative;overflow:hidden;transition:border-color .15s,box-shadow .15s}
+.cal-day:hover{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
 .cal-day.other-month{opacity:.3}
-.cal-day.today{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
-.cal-day .day-num{font-weight:700;color:var(--text2);margin-bottom:4px;font-size:13px}
-.cal-event{background:rgba(123,35,50,.1);color:var(--accent);padding:2px 5px;border-radius:3px;margin-bottom:2px;font-size:11px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-left:2px solid var(--accent)}
-.cal-event:hover{background:rgba(123,35,50,.18)}
-.cal-event.night{background:rgba(139,92,246,.12);color:#7C3AED;border-left-color:#7C3AED}
-.cal-event.walking{background:rgba(45,138,78,.1);color:var(--green);border-left-color:var(--green)}
-@media(max-width:768px){.sidebar{width:60px}.sidebar h1,.sidebar .nav-group,.sidebar .nav-item span{display:none}.main{margin-left:60px}.form-grid{grid-template-columns:1fr}.cal-day{min-height:60px}}
+.cal-day.today{border-color:var(--accent);box-shadow:0 0 0 2px rgba(79,70,229,.2);background:rgba(79,70,229,.02)}
+.cal-day .day-num{font-weight:700;color:var(--text2);margin-bottom:5px;font-size:13px}
+
+/* ── Calendar events ── */
+.cal-event{background:var(--accent-light);color:var(--accent);padding:2px 6px;border-radius:4px;margin-bottom:2px;font-size:11px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-left:2px solid var(--accent);font-weight:500;transition:background .15s}
+.cal-event:hover{background:rgba(79,70,229,.15)}
+.cal-event.night{background:rgba(124,58,237,.08);color:var(--purple);border-left-color:var(--purple)}
+.cal-event.walking{background:rgba(5,150,105,.08);color:var(--green);border-left-color:var(--green)}
+
+/* ── Planning grid ── */
+.plan-grid{display:grid;gap:0;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:var(--card);box-shadow:var(--shadow)}
+.plan-header{background:var(--accent);color:#fff;padding:10px 12px;font-size:12px;font-weight:600;text-align:center;border-right:1px solid rgba(255,255,255,.15);white-space:nowrap}
+.plan-row-header{background:var(--card2);padding:10px 12px;font-size:12px;font-weight:600;border-right:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plan-cell{min-height:54px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:4px;position:relative;display:flex;flex-direction:column;gap:2px}
+.plan-block{padding:4px 7px;border-radius:5px;font-size:10px;line-height:1.3;cursor:default;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.plan-block.tour{background:var(--accent-light);color:var(--accent);border-left:3px solid var(--accent)}
+.plan-block.rental{background:rgba(234,88,12,.08);color:var(--orange);border-left:3px solid var(--orange)}
+.plan-block.conflict{background:rgba(220,38,38,.1);color:var(--red);border-left:3px solid var(--red)}
+.plan-free{color:var(--green);font-size:10px;opacity:.4;text-align:center;padding:4px}
+.plan-week-nav{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.plan-week-nav button{padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card);cursor:pointer;font-size:13px;color:var(--text);font-weight:500;transition:all .15s}
+.plan-week-nav button:hover{background:var(--card2);border-color:var(--text3)}
+.plan-week-nav .week-label{font-size:16px;font-weight:700;color:var(--text)}
+.plan-legend{display:flex;gap:18px;margin-bottom:14px;flex-wrap:wrap}
+.plan-legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)}
+.plan-legend-dot{width:12px;height:12px;border-radius:4px}
+
+/* ── Round trip timeline ── */
+.rt-timeline{position:relative;padding-left:28px}
+.rt-timeline::before{content:'';position:absolute;left:12px;top:0;bottom:0;width:2px;background:var(--border)}
+.rt-day-card{position:relative;margin-bottom:16px;padding:18px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.rt-day-card::before{content:'';position:absolute;left:-22px;top:22px;width:12px;height:12px;border-radius:50%;background:var(--accent);border:2px solid var(--card)}
+.rt-day-card.active::before{background:var(--green);box-shadow:0 0 0 3px rgba(5,150,105,.2)}
+.rt-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.rt-blocked{opacity:.5;pointer-events:none;position:relative}
+.rt-blocked::after{content:'\1F512  Зает от обиколен тур';position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--red);font-weight:600}
+
+/* ── Responsive ── */
+@media(max-width:768px){.sidebar{width:56px}.sidebar h1 span,.sidebar .nav-group,.sidebar .nav-item .label{display:none}.sidebar h1{padding:12px;justify-content:center}.sidebar .nav-item{justify-content:center;padding:10px}.main{margin-left:56px;padding:12px}.form-grid{grid-template-columns:1fr}.cal-day{min-height:60px}.drawer{width:100vw}}
+
+/* ── Scrollbar ── */
+.sidebar::-webkit-scrollbar{width:4px}
+.sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:2px}
+.modal::-webkit-scrollbar{width:6px}
+.modal::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 </style>
 </head>
 <body>
@@ -100,6 +192,7 @@ tr:hover td{background:rgba(123,35,50,.04)}
 
 const {useState,useMemo,useCallback,useEffect}=React;
 const INIT=window.__TOUR_DATA__;
+if(!INIT.roundTrips)INIT.roundTrips=[];
 const MONTHS=['Януари','Февруари','Март','Април','Май','Юни','Юли','Август','Септември','Октомври','Ноември','Декември'];
 function genId(arr){return arr.length?Math.max(...arr.map(x=>x.id))+1:1}
 function parseDate(ds){if(!ds)return null;const s=String(ds);const p=s.split('.');if(p.length===3)return new Date(+p[2],+p[1]-1,+p[0]);return null}
@@ -366,7 +459,7 @@ function ListView({filtered,onEdit,onDelete}){
 }
 
 // ============= TOURS PAGE =============
-function ToursPage({tours,setTours,guides,catalog,vehicles}){
+function ToursPage({tours,setTours,guides,catalog,vehicles,roundTrips,stopsCarBus}){
   const [year,setYear]=useState(2026);
   const [month,setMonth]=useState(new Date().getMonth()+1);
   const [search,setSearch]=useState('');const [editing,setEditing]=useState(null);const [delId,setDelId]=useState(null);const [view,setView]=useState('table');const [carFilter,setCarFilter]=useState(false);const [bulkCar,setBulkCar]=useState('');const [bulkSel,setBulkSel]=useState(new Set());const [statusFilter,setStatusFilter]=useState('all');
@@ -455,12 +548,12 @@ function ToursPage({tours,setTours,guides,catalog,vehicles}){
     {view==='list'&&<ListView filtered={filtered} onEdit={t=>setEditing({...t})} onDelete={id=>setDelId(id)}/>}
     {view==='calendar'&&<CalendarView filtered={filtered} month={month} year={year} onEdit={t=>setEditing({...t})}/>}
     {editing&&<Modal title={editing.id?"Редактирай тур":"Нов тур"} onClose={()=>setEditing(null)}>
-      <TourForm data={editing} onSave={save} onCancel={()=>setEditing(null)} guides={guides} catalog={catalog} vehicles={vehicles} allTours={tours}/></Modal>}
+      <TourForm data={editing} onSave={save} onCancel={()=>setEditing(null)} guides={guides} catalog={catalog} vehicles={vehicles} allTours={tours} roundTrips={roundTrips} stopsCarBus={stopsCarBus}/></Modal>}
     {delId&&<ConfirmModal msg="Изтрий тур?" onConfirm={del} onCancel={()=>setDelId(null)}/>}
   </div>
 }
 
-function TourForm({data,onSave,onCancel,guides,catalog,vehicles,allTours}){
+function TourForm({data,onSave,onCancel,guides,catalog,vehicles,allTours,roundTrips,stopsCarBus}){
   const[f,setF]=useState(data);const u=(k,v)=>setF(p=>({...p,[k]:v}));
   const [formTab,setFormTab]=useState('tour');
   const [catSearch,setCatSearch]=useState('');
@@ -469,29 +562,63 @@ function TourForm({data,onSave,onCancel,guides,catalog,vehicles,allTours}){
   const tp=f.tourType||'guide_driver';
   const st=f.tourStatus||'reservation';
   const needsCar=tp==='guide_drives'||tp==='guide_driver';
-  const needsDriver=tp==='guide_driver';
+  const needsDriver=tp==='guide_driver'&&!f.guideIsDriver;
   const reqFields=useMemo(()=>{
     const r=['guide','expGuide'];
     if(needsCar){r.push('carNumber','expFuel')}
     if(needsDriver){r.push('driver','expDriver')}
     return r;
-  },[tp]);
+  },[tp,f.guideIsDriver]);
   const missing=reqFields.filter(k=>!f[k]&&f[k]!==0);
   const canReport=missing.length===0&&f.priceToUs!=null;
   const totalExp=(f.expGuide||0)+(f.expDriver||0)+(f.expFuel||0)+(f.expAudioGuide||0)+(f.expEntryFees||0)+(f.expLunch||0)+(f.expParking||0);
   const balance=(f.priceToUs||0)-totalExp;
   const vList=(vehicles||[]).filter(v=>v.active);
   const selectedVehicle=f.carNumber?vList.find(v=>v.name===f.carNumber):null;
+  const rtBlocked=useMemo(()=>{
+    if(!f.date||!roundTrips)return{cars:new Set(),guides:new Set(),drivers:new Set()};
+    const d=parseDate(f.date);if(!d)return{cars:new Set(),guides:new Set(),drivers:new Set()};
+    const cars=new Set(),gds=new Set(),drs=new Set();
+    roundTrips.forEach(rt=>{
+      if(rt.status==='cancelled')return;
+      const from=parseDate(rt.dateFrom),to=parseDate(rt.dateTo);
+      if(!from||!to)return;
+      if(d>=from&&d<=to){
+        if(rt.vehicle)cars.add(rt.vehicle);
+        if(rt.guide)gds.add(rt.guide);
+        if(rt.driver)drs.add(rt.driver);
+      }
+    });
+    return{cars,guides:gds,drivers:drs};
+  },[f.date,roundTrips]);
+  const inServiceCars=useMemo(()=>{
+    if(!f.date||!stopsCarBus)return new Set();
+    const d=parseDate(f.date);if(!d)return new Set();
+    const s=new Set();
+    stopsCarBus.forEach(st=>{
+      const from=parseDate(st.startDate),to=parseDate(st.endDate);
+      if(!from||!to)return;
+      if(d>=from&&d<=to&&st.vehicle)s.add(st.vehicle);
+    });
+    return s;
+  },[f.date,stopsCarBus]);
   const parseSeats=(s)=>{if(!s)return{pax:0,total:0};const p=String(s).split('+');return{pax:parseInt(p[0])||0,total:(parseInt(p[0])||0)+(parseInt(p[1])||0)}};
   const vSeats=selectedVehicle?parseSeats(selectedVehicle.seats):null;
+  // Гидът заема пътническо място, ОСВЕН ако е и шофьор (тогава е на +1 шофьорското)
+  const guideIsDriver=!!f.guideIsDriver;
+  const guideSeatsTaken=f.guide&&!guideIsDriver?1:0;
+  const availableForTourists=vSeats?vSeats.pax-guideSeatsTaken:null;
   const sameDayTours=useMemo(()=>{
     if(!f.carNumber||!f.date||!allTours)return[];
     return allTours.filter(t=>t.id!==f.id&&t.carNumber===f.carNumber&&t.date===f.date);
   },[f.carNumber,f.date,f.id,allTours]);
   const sameDayPax=sameDayTours.reduce((a,t)=>a+(t.adults||0)+(t.children||0),0);
+  // За другите турове на същия ден — гидовете им също заемат място (ако не са шофьори)
+  const sameDayGuideSeats=sameDayTours.reduce((a,t)=>{const gd=!!t.guideIsDriver;return a+(t.guide&&!gd?1:0)},0);
   const thisPax=(f.adults||0)+(f.children||0);
-  const totalPaxInCar=sameDayPax+thisPax;
+  const totalPaxInCar=sameDayPax+thisPax+guideSeatsTaken+sameDayGuideSeats;
   const remainingSeats=vSeats?vSeats.pax-totalPaxInCar:null;
+  const capacityOk=!needsCar||!selectedVehicle||!vSeats||vSeats.pax===0||remainingSeats>=0;
   const missingReport=missing.filter(k=>['expGuide','expDriver','expFuel'].includes(k));
   const missingTour=missing.filter(k=>['guide','driver','carNumber'].includes(k));
   const isWalking=tp==='walking';
@@ -507,7 +634,7 @@ function TourForm({data,onSave,onCancel,guides,catalog,vehicles,allTours}){
     </div>
     <div>
       <select value={st} onChange={e=>u('tourStatus',e.target.value)} style={{padding:'6px 12px',borderRadius:6,fontSize:13,fontWeight:600,border:'1px solid var(--border)',cursor:'pointer',
-        background:st==='planned'?'rgba(45,138,78,.12)':st==='reported'?'rgba(45,138,78,.12)':st==='done'?'rgba(212,160,23,.12)':st==='cancelled'?'rgba(192,57,43,.12)':'rgba(123,35,50,.1)',
+        background:st==='planned'?'rgba(5,150,105,.1)':st==='reported'?'rgba(5,150,105,.1)':st==='done'?'rgba(217,119,6,.1)':st==='cancelled'?'rgba(220,38,38,.1)':'rgba(79,70,229,.08)',
         color:st==='planned'?'var(--green)':st==='reported'?'var(--green)':st==='done'?'var(--yellow)':st==='cancelled'?'var(--red)':'var(--accent)'}}>
         <option value="reservation">{'📋'} Резервация</option>
         <option value="planned">{'📌'} Планиран</option>
@@ -572,11 +699,15 @@ function TourForm({data,onSave,onCancel,guides,catalog,vehicles,allTours}){
     </div>
     <h4 style={{margin:'20px 0 10px',color:'var(--text2)',fontSize:13,borderTop:'1px solid var(--border)',paddingTop:16}}>ЕКИП И ТРАНСПОРТ</h4>
     <div className="form-grid">
-      <div className="form-group"><label>Гид {missingTour.includes('guide')&&<span style={{color:'var(--red)'}}>*</span>}</label><input list="guide-list" value={f.guide} onChange={e=>u('guide',e.target.value)} style={{borderColor:missingTour.includes('guide')?'var(--red)':''}}/><datalist id="guide-list">{guides.map(g=><option key={g.id} value={g.name}/>)}</datalist></div>
-      {needsDriver?<div className="form-group"><label>Шофьор {missingTour.includes('driver')&&<span style={{color:'var(--red)'}}>*</span>}</label><input value={f.driver} onChange={e=>u('driver',e.target.value)} style={{borderColor:missingTour.includes('driver')?'var(--red)':''}}/></div>
-      :<div className="form-group"><label>Шофьор</label><input value={f.driver} onChange={e=>u('driver',e.target.value)}/></div>}
-      {needsCar?<div className="form-group"><label>Кола {missingTour.includes('carNumber')&&<span style={{color:'var(--red)'}}>*</span>}</label><select value={f.carNumber} onChange={e=>u('carNumber',e.target.value)} style={{width:'100%',borderColor:missingTour.includes('carNumber')?'var(--red)':''}}><option value="">— избери кола —</option>{vList.map(v=><option key={v.id} value={v.name}>{v.name}{v.seats?' ('+v.seats+')':''}</option>)}</select>{selectedVehicle&&vSeats&&vSeats.pax>0&&<div style={{marginTop:6,padding:'6px 10px',borderRadius:6,fontSize:12,background:remainingSeats<0?'rgba(192,57,43,.1)':remainingSeats===0?'rgba(212,160,23,.1)':'rgba(45,138,78,.08)',border:'1px solid '+(remainingSeats<0?'rgba(192,57,43,.25)':remainingSeats===0?'rgba(212,160,23,.25)':'rgba(45,138,78,.15)'),color:remainingSeats<0?'var(--red)':remainingSeats===0?'var(--yellow)':'var(--green)'}}>
-            {selectedVehicle.seats} места | Този тур: {thisPax} пакс{sameDayPax>0&&<span> + {sameDayPax} от {sameDayTours.length} други тура</span>} | <strong>{remainingSeats>=0?remainingSeats+' свободни':'Надвишени с '+Math.abs(remainingSeats)+'!'}</strong>
+      <div className="form-group"><label>Гид {missingTour.includes('guide')&&<span style={{color:'var(--red)'}}>*</span>}</label><select value={f.guide||''} onChange={e=>{u('guide',e.target.value);if(f.guideIsDriver)u('driver',e.target.value)}} style={{width:'100%',borderColor:missingTour.includes('guide')?'var(--red)':'',color:rtBlocked.guides.has(f.guide)?'var(--red)':'inherit'}}><option value="">— избери гид —</option>{guides.map(g=>{const isRT=rtBlocked.guides.has(g.name);return <option key={g.id} value={g.name} style={{color:isRT?'var(--red)':'inherit',fontWeight:isRT?700:'normal'}}>{g.name}{isRT?' ● обиколен тур':''}</option>})}</select>{rtBlocked.guides.has(f.guide)&&<div style={{marginTop:4,padding:'6px 10px',borderRadius:6,fontSize:11,background:'rgba(220,38,38,.08)',border:'1px solid rgba(192,57,43,.25)',color:'var(--red)',fontWeight:600}}>⚠️ Този гид е зает от обиколен тур за тази дата!</div>}
+        {needsCar&&<label style={{display:'flex',alignItems:'center',gap:6,marginTop:6,fontSize:12,cursor:'pointer',userSelect:'none'}}><input type="checkbox" checked={!!f.guideIsDriver} onChange={e=>{const v=e.target.checked;setF(p=>({...p,guideIsDriver:v,driver:v?p.guide:''}))}}/><span style={{color:f.guideIsDriver?'var(--green)':'var(--text2)',fontWeight:f.guideIsDriver?600:400}}>Гидът шофира</span></label>}
+      </div>
+      {!f.guideIsDriver&&(needsDriver?<div className="form-group"><label>Шофьор {missingTour.includes('driver')&&<span style={{color:'var(--red)'}}>*</span>}</label><input value={f.driver} onChange={e=>u('driver',e.target.value)} style={{borderColor:missingTour.includes('driver')?'var(--red)':''}}/>{rtBlocked.drivers.has(f.driver)&&<div style={{marginTop:4,padding:'4px 8px',borderRadius:4,fontSize:11,background:'rgba(220,38,38,.08)',color:'var(--red)',fontWeight:600}}>🔒 Зает от обиколен тур за периода</div>}</div>
+      :<div className="form-group"><label>Шофьор</label><input value={f.driver} onChange={e=>u('driver',e.target.value)}/></div>)}
+      {needsCar?<div className="form-group"><label>Кола {missingTour.includes('carNumber')&&<span style={{color:'var(--red)'}}>*</span>}</label><select value={f.carNumber} onChange={e=>u('carNumber',e.target.value)} style={{width:'100%',borderColor:missingTour.includes('carNumber')?'var(--red)':'',color:rtBlocked.cars.has(f.carNumber)?'var(--red)':inServiceCars.has(f.carNumber)?'var(--orange)':'inherit'}}><option value="">— избери кола —</option>{vList.map(v=>{const isRT=rtBlocked.cars.has(v.name);const isSvc=inServiceCars.has(v.name);return <option key={v.id} value={v.name} style={{color:isRT?'var(--red)':isSvc?'var(--orange)':'inherit',fontWeight:isRT||isSvc?700:'normal'}}>{v.name}{v.seats?' ('+v.seats+')':''}{isRT?' ● обиколен тур':isSvc?' ● сервиз':''}</option>})}</select>{rtBlocked.cars.has(f.carNumber)&&<div style={{marginTop:4,padding:'6px 10px',borderRadius:6,fontSize:11,background:'rgba(220,38,38,.08)',border:'1px solid rgba(192,57,43,.25)',color:'var(--red)',fontWeight:600}}>⚠️ Тази кола е заета от обиколен тур за тази дата!</div>}{inServiceCars.has(f.carNumber)&&<div style={{marginTop:4,padding:'6px 10px',borderRadius:6,fontSize:11,background:'rgba(234,88,12,.08)',border:'1px solid rgba(234,88,12,.2)',color:'var(--orange)',fontWeight:600}}>🔧 Тази кола е в сервиз за тази дата!</div>}{selectedVehicle&&vSeats&&vSeats.pax>0&&<div style={{marginTop:6,padding:'6px 10px',borderRadius:6,fontSize:12,background:remainingSeats<0?'rgba(220,38,38,.08)':remainingSeats===0?'rgba(217,119,6,.08)':'rgba(45,138,78,.08)',border:'1px solid '+(remainingSeats<0?'rgba(192,57,43,.25)':remainingSeats===0?'rgba(212,160,23,.25)':'rgba(45,138,78,.15)'),color:remainingSeats<0?'var(--red)':remainingSeats===0?'var(--yellow)':'var(--green)'}}>
+            {selectedVehicle.seats} места | {guideSeatsTaken>0?<span>Гид: 1 място | </span>:guideIsDriver?<span>Гид=Шофьор | </span>:null}Туристи: {thisPax}{sameDayPax>0&&<span> + {sameDayPax} от {sameDayTours.length} др.</span>} | <strong>{remainingSeats>=0?remainingSeats+' свободни':'Надвишени с '+Math.abs(remainingSeats)+'!'}</strong>
+          </div>}{selectedVehicle&&vSeats&&vSeats.pax>0&&remainingSeats<0&&<div style={{marginTop:6,padding:'8px 12px',borderRadius:6,fontSize:12,background:'rgba(220,38,38,.1)',border:'2px solid rgba(192,57,43,.4)',color:'var(--red)',fontWeight:700,textAlign:'center'}}>
+            🚫 Не може да се запази — {Math.abs(remainingSeats)} {Math.abs(remainingSeats)===1?'място':'места'} в повече! Избери по-голяма кола или намали броя туристи.
           </div>}</div>
       :<div className="form-group"><label>Кола</label><select value={f.carNumber} onChange={e=>u('carNumber',e.target.value)} style={{width:'100%'}}><option value="">— без кола —</option><option value="пешеходен">пешеходен</option>{vList.map(v=><option key={v.id} value={v.name}>{v.name}{v.seats?' ('+v.seats+')':''}</option>)}</select></div>}
       <div className="form-group"><label>Резервации направени</label><input value={f.reservationMade} onChange={e=>u('reservationMade',e.target.value)}/></div>
@@ -635,8 +766,8 @@ function TourForm({data,onSave,onCancel,guides,catalog,vehicles,allTours}){
     </div>
     <div style={{display:'flex',gap:8}}>
       <button className="btn btn-ghost" onClick={onCancel}>Затвори</button>
-      <button className="btn btn-primary" onClick={()=>onSave(f)}>💾 Запази</button>
-      {st!=='reported'&&st!=='cancelled'&&<button className="btn btn-primary" style={{background:canReport?'var(--green)':'var(--border)',cursor:canReport?'pointer':'not-allowed'}} disabled={!canReport} onClick={()=>{if(canReport)onSave({...f,tourStatus:'reported'})}}>📊 Отчети тура</button>}
+      <button className="btn btn-primary" disabled={!capacityOk} style={{opacity:capacityOk?1:.5,cursor:capacityOk?'pointer':'not-allowed'}} onClick={()=>{if(capacityOk)onSave(f)}} title={!capacityOk?'Капацитетът на колата е надвишен!':''}>💾 Запази</button>
+      {st!=='reported'&&st!=='cancelled'&&<button className="btn btn-primary" style={{background:canReport&&capacityOk?'var(--green)':'var(--border)',cursor:canReport&&capacityOk?'pointer':'not-allowed'}} disabled={!canReport||!capacityOk} onClick={()=>{if(canReport&&capacityOk)onSave({...f,tourStatus:'reported'})}}>📊 Отчети тура</button>}
     </div>
   </div></div>
 }
@@ -1342,7 +1473,7 @@ function FleetPage({tours,fuel,fines,carTasks,stopsCarBus,vehicles,setVehicles})
 
 
 // ============= CAR RENTAL =============
-function CarRentalPage({rentals,setRentals,vehicles}){
+function CarRentalPage({rentals,setRentals,vehicles,roundTrips,stopsCarBus}){
   const [search,setSearch]=useState('');const [editing,setEditing]=useState(null);const [delId,setDelId]=useState(null);
   const calcDays=(from,to)=>{if(!from||!to)return 0;const a=new Date(from.split('.').reverse().join('-')),b=new Date(to.split('.').reverse().join('-'));const diff=Math.round((b-a)/(1000*60*60*24));return diff>0?diff:0};
   const filtered=useMemo(()=>{const s=search.toLowerCase();return !s?rentals:rentals.filter(r=>(r.client||'').toLowerCase().includes(s)||(r.vehicle||'').toLowerCase().includes(s)||(r.dateFrom||'').includes(s))},[rentals,search]);
@@ -1376,24 +1507,53 @@ function CarRentalPage({rentals,setRentals,vehicles}){
         <button className="btn btn-danger btn-sm" onClick={()=>setDelId(r.id)}>✕</button></td>
     </tr>)}</tbody></table></div>
     {editing&&<Modal title={editing.id?"Редактирай наем":"Нов наем"} onClose={()=>setEditing(null)}>
-      <CarRentalForm data={editing} onSave={save} onCancel={()=>setEditing(null)} vehicles={vList}/>
+      <CarRentalForm data={editing} onSave={save} onCancel={()=>setEditing(null)} vehicles={vList} roundTrips={roundTrips} stopsCarBus={stopsCarBus}/>
     </Modal>}
     {delId&&<ConfirmModal msg="Изтрий наем?" onConfirm={del} onCancel={()=>setDelId(null)}/>}
   </div>
 }
 
-function CarRentalForm({data,onSave,onCancel,vehicles}){
+function CarRentalForm({data,onSave,onCancel,vehicles,roundTrips,stopsCarBus}){
   const [f,setF]=useState(data);const u=(k,v)=>setF(p=>({...p,[k]:v}));
   const toISO=(d)=>d&&d.includes('.')?d.split('.').reverse().join('-'):(d||'');
   const fromISO=(v)=>{if(!v)return '';const p=v.split('-');return p[2]+'.'+p[1]+'.'+p[0]};
   const calcDays=(from,to)=>{if(!from||!to)return 0;const a=new Date(from.split('.').reverse().join('-')),b=new Date(to.split('.').reverse().join('-'));const diff=Math.round((b-a)/(1000*60*60*24));return diff>0?diff:0};
   const days=calcDays(f.dateFrom,f.dateTo);
+  const rtBlockedCars=useMemo(()=>{
+    if(!f.dateFrom||!f.dateTo||!roundTrips)return new Set();
+    const from=parseDate(f.dateFrom),to=parseDate(f.dateTo);
+    if(!from||!to)return new Set();
+    const blocked=new Set();
+    roundTrips.forEach(rt=>{
+      if(rt.status==='cancelled'||!rt.vehicle)return;
+      const rf=parseDate(rt.dateFrom),rto=parseDate(rt.dateTo);
+      if(!rf||!rto)return;
+      if(from<=rto&&to>=rf)blocked.add(rt.vehicle);
+    });
+    return blocked;
+  },[f.dateFrom,f.dateTo,roundTrips]);
+  const svcBlockedCars=useMemo(()=>{
+    if(!f.dateFrom||!f.dateTo||!stopsCarBus)return new Set();
+    const from=parseDate(f.dateFrom),to=parseDate(f.dateTo);
+    if(!from||!to)return new Set();
+    const blocked=new Set();
+    stopsCarBus.forEach(st=>{
+      if(!st.vehicle)return;
+      const sf=parseDate(st.startDate),sto=parseDate(st.endDate);
+      if(!sf||!sto)return;
+      if(from<=sto&&to>=sf)blocked.add(st.vehicle);
+    });
+    return blocked;
+  },[f.dateFrom,f.dateTo,stopsCarBus]);
   const total=days*(f.pricePerDay||0);
   return <div>
     <div className="form-grid">
       <div className="form-group full"><label>Автомобил</label><select value={f.vehicle||''} onChange={e=>u('vehicle',e.target.value)} style={{width:'100%'}}>
-        <option value="">— избери кола —</option>{vehicles.map(v=><option key={v.id} value={v.name}>{v.name}{v.seats?' ('+v.seats+')':''}</option>)}
-      </select></div>
+        <option value="">— избери кола —</option>{vehicles.map(v=>{const isRT=rtBlockedCars.has(v.name);const isSvc=svcBlockedCars.has(v.name);return <option key={v.id} value={v.name} style={{color:isRT?'var(--red)':isSvc?'var(--orange)':'inherit',fontWeight:isRT||isSvc?700:'normal'}}>{v.name}{v.seats?' ('+v.seats+')':''}{isRT?' ● обиколен тур':isSvc?' ● сервиз':''}</option>})}
+      </select>
+      {rtBlockedCars.has(f.vehicle)&&<div style={{marginTop:4,padding:'6px 10px',borderRadius:6,fontSize:11,background:'rgba(220,38,38,.08)',border:'1px solid rgba(192,57,43,.25)',color:'var(--red)',fontWeight:600}}>⚠️ Тази кола е заета от обиколен тур за периода!</div>}
+      {svcBlockedCars.has(f.vehicle)&&<div style={{marginTop:4,padding:'6px 10px',borderRadius:6,fontSize:11,background:'rgba(234,88,12,.08)',border:'1px solid rgba(234,88,12,.2)',color:'var(--orange)',fontWeight:600}}>🔧 Тази кола е в сервиз за периода!</div>}
+      </div>
       <div className="form-group"><label>От дата</label><input type="date" value={toISO(f.dateFrom)} onChange={e=>u('dateFrom',fromISO(e.target.value))}/></div>
       <div className="form-group"><label>До дата</label><input type="date" value={toISO(f.dateTo)} onChange={e=>u('dateTo',fromISO(e.target.value))}/></div>
       <div className="form-group"><label>Клиент</label><input value={f.client||''} onChange={e=>u('client',e.target.value)}/></div>
@@ -1413,16 +1573,86 @@ function CarRentalForm({data,onSave,onCancel,vehicles}){
 }
 
 
+
+// ============= MERGE CARD COMPONENT =============
+function MergeCard({mg,ids,fittingCars,fittingCarsGD,existingCar,existingGuide,existingDriver,existingGID,activeVehicles,activeGuides,selData,mergeTours,parseSeatsP}){
+  const [car,setCar]=useState(existingCar);
+  const [guide,setGuide]=useState(existingGuide);
+  const [driver,setDriver]=useState(existingDriver);
+  const [gid,setGid]=useState(existingGID);
+  
+  const availCars=gid?fittingCarsGD:fittingCars;
+  const selectedCar=activeVehicles.find(v=>v.name===car);
+  const maxPax=selectedCar?parseSeatsP(selectedCar.seats):0;
+  const guideSeats=guide&&!gid?1:0;
+  const remaining=maxPax-mg.totalPax-guideSeats;
+  const canMerge=car&&guide&&(gid||driver)&&remaining>=0;
+  
+  return <div style={{padding:'10px 12px',marginBottom:8,borderRadius:8,background:'rgba(139,92,246,.04)',border:'1px solid rgba(139,92,246,.25)',fontSize:12}}>
+    <div style={{fontWeight:700,marginBottom:6,color:'var(--purple)'}}>{mg.name}</div>
+    <div style={{marginBottom:6,fontSize:11,color:'var(--text2)'}}>
+      {mg.tours.map((t,j)=><div key={j} style={{display:'flex',justifyContent:'space-between',padding:'2px 0'}}>
+        <span>{t.name||'—'} {t.tour&&t.tour.includes(' - ')?<span style={{opacity:.6}}>({t.tour.split(' - ').pop()})</span>:null}</span>
+        <span style={{fontWeight:600}}>{(t.adults||0)+(t.children||0)} пакс</span>
+      </div>)}
+      <div style={{borderTop:'1px solid rgba(139,92,246,.2)',paddingTop:3,marginTop:3,fontWeight:700,display:'flex',justifyContent:'space-between'}}>
+        <span>Общо</span><span>{mg.totalPax} пакс</span>
+      </div>
+    </div>
+    <div style={{display:'flex',flexDirection:'column',gap:6}}>
+      <div>
+        <label style={{fontSize:10,color:'var(--text2)',fontWeight:600}}>Кола</label>
+        <select value={car} onChange={e=>setCar(e.target.value)} style={{width:'100%',fontSize:11,padding:'4px 6px',borderRadius:4,border:'1px solid var(--border)'}}>
+          <option value="">— избери —</option>
+          {activeVehicles.filter(v=>v.active).map(v=>{
+            const pax=parseSeatsP(v.seats);
+            const fits=pax>=mg.totalPax+(gid?0:1);
+            const isRT=selData.dayRoundTrips.cars.has(v.name);
+            const isSvc=selData.inServiceCars.has(v.name);
+            return <option key={v.id} value={v.name} style={{color:isRT?'var(--red)':isSvc?'var(--orange)':!fits?'#999':'inherit',fontWeight:fits?700:'normal'}}>
+              {v.name} ({v.seats}){isRT?' ● обик.':isSvc?' ● сервиз':fits?' ✓':' ✕ малка'}
+            </option>
+          })}
+        </select>
+        {car&&selectedCar&&<div style={{fontSize:10,marginTop:2,color:remaining>=0?'var(--green)':'var(--red)',fontWeight:600}}>
+          {remaining>=0?remaining+' свободни места':'Надвишени с '+Math.abs(remaining)+'!'}
+        </div>}
+      </div>
+      <div style={{display:'flex',gap:6}}>
+        <div style={{flex:1}}>
+          <label style={{fontSize:10,color:'var(--text2)',fontWeight:600}}>Гид</label>
+          <select value={guide} onChange={e=>{setGuide(e.target.value);if(gid)setDriver(e.target.value)}} style={{width:'100%',fontSize:11,padding:'4px 6px',borderRadius:4,border:'1px solid var(--border)'}}>
+            <option value="">— избери —</option>
+            {activeGuides.map(g=><option key={g.name} value={g.name}>{g.name}</option>)}
+          </select>
+          <label style={{display:'flex',alignItems:'center',gap:4,marginTop:3,fontSize:10,cursor:'pointer'}}><input type="checkbox" checked={gid} onChange={e=>{setGid(e.target.checked);if(e.target.checked)setDriver(guide)}}/> Гидът шофира</label>
+        </div>
+        {!gid&&<div style={{flex:1}}>
+          <label style={{fontSize:10,color:'var(--text2)',fontWeight:600}}>Шофьор</label>
+          <input value={driver} onChange={e=>setDriver(e.target.value)} style={{width:'100%',fontSize:11,padding:'4px 6px',borderRadius:4,border:'1px solid var(--border)'}} placeholder="Име..."/>
+        </div>}
+      </div>
+    </div>
+    <button onClick={()=>{if(canMerge)mergeTours(ids,car,guide,driver,gid)}} disabled={!canMerge}
+      style={{marginTop:8,width:'100%',padding:'6px',borderRadius:6,border:'none',cursor:canMerge?'pointer':'not-allowed',
+        background:canMerge?'linear-gradient(135deg,#8B5CF6,var(--accent))':'var(--border)',
+        color:canMerge?'#fff':'var(--text2)',fontWeight:700,fontSize:12,opacity:canMerge?1:.6}}>
+      {'🔗'} Обедини {mg.tours.length} резервации в 1 кола
+    </button>
+  </div>
+}
+
 // ============= PLANNING MODULE =============
-function PlanningPage({tours,setTours,carRentals,vehicles,guides}){
+function PlanningPage({tours,setTours,carRentals,roundTrips,vehicles,guides,stopsCarBus}){
   const now=new Date();
   const [viewMonth,setViewMonth]=useState(now.getMonth());
   const [viewYear,setViewYear]=useState(now.getFullYear());
   const [selectedDate,setSelectedDate]=useState(null);
-  // Check if tour is fully planned: walking=guide only, car=car+guide+driver
+  // Check if tour is fully planned: walking=guide only, car=car+guide+driver (or guideIsDriver)
   const isPlanned=(t)=>{
     const isWalking=t.tourType==='guide_only'||t.tourType==='walking';
     if(isWalking)return !!t.guide;
+    if(t.guideIsDriver)return !!t.carNumber&&!!t.guide;
     return !!t.carNumber&&!!t.guide&&!!t.driver;
   };
   const autoStatus=(tour,updates)=>{
@@ -1432,9 +1662,40 @@ function PlanningPage({tours,setTours,carRentals,vehicles,guides}){
     if(!planned&&merged.tourStatus==='planned')return{...updates,tourStatus:'reservation'};
     return updates;
   };
-  const assignCar=(tourId,carName)=>{setTours(prev=>prev.map(t=>{if(t.id!==tourId)return t;const u=autoStatus(t,{carNumber:carName});return{...t,...u}}));setPopover(null)};
+  const parseSeatsP=(s)=>{if(!s)return 0;const p=String(s).split('+');return parseInt(p[0])||0};
+  const assignCar=(tourId,carName)=>{
+    if(carName){
+      const tour=tours.find(x=>x.id===tourId);
+      const car=activeVehicles.find(v=>v.name===carName);
+      if(tour&&car&&car.seats){
+        const maxPax=parseSeatsP(car.seats);
+        const tourPax=(tour.adults||0)+(tour.children||0);
+        // Гидът заема пътническо място освен ако е и шофьор
+        const gIsD=!!tour.guideIsDriver;
+        const guideSeats=tour.guide&&!gIsD?1:0;
+        // Check other tours on same day with same car
+        const sameDayOther=tours.filter(t=>t.id!==tourId&&t.carNumber===carName&&t.date===tour.date);
+        const sameDayPax=sameDayOther.reduce((a,t)=>a+(t.adults||0)+(t.children||0),0);
+        const sameDayGuideSeats=sameDayOther.reduce((a,t)=>{const gd=!!t.guideIsDriver;return a+(t.guide&&!gd?1:0)},0);
+        const totalNeeded=tourPax+guideSeats+sameDayPax+sameDayGuideSeats;
+        if(maxPax>0&&totalNeeded>maxPax){
+          alert('⚠️ Колата '+carName+' има '+car.seats+' места ('+maxPax+' пътнически), но са нужни '+totalNeeded+' (туристи + гид). Избери по-голяма кола!');
+          return;
+        }
+      }
+    }
+    setTours(prev=>prev.map(t=>{if(t.id!==tourId)return t;const u=autoStatus(t,{carNumber:carName});return{...t,...u}}));setPopover(null)
+  };
   const assignGuide=(tourId,guideName)=>{setTours(prev=>prev.map(t=>{if(t.id!==tourId)return t;const u=autoStatus(t,{guide:guideName});return{...t,...u}}));setPopover(null)};
   const assignDriver=(tourId,driverName)=>{setTours(prev=>prev.map(t=>{if(t.id!==tourId)return t;const u=autoStatus(t,{driver:driverName});return{...t,...u}}));setPopover(null)};
+  const mergeTours=(tourIds,carName,guideName,driverName,guideIsDriverFlag)=>{
+    setTours(prev=>prev.map(t=>{
+      if(!tourIds.includes(t.id))return t;
+      const updates={carNumber:carName,guide:guideName,driver:guideIsDriverFlag?guideName:driverName,guideIsDriver:guideIsDriverFlag};
+      const u=autoStatus(t,updates);
+      return{...t,...u};
+    }));
+  };
   const [popover,setPopover]=useState(null); // {tourId,field:'car'|'guide'|'driver'}
   const popRef=React.useRef(null);
   const [driverInput,setDriverInput]=useState('');
@@ -1489,20 +1750,77 @@ function PlanningPage({tours,setTours,carRentals,vehicles,guides}){
     return map;
   },[carRentals]);
 
+  // Index round trips by date for calendar display
+  const roundTripsByDate=useMemo(()=>{
+    const map={};
+    (roundTrips||[]).forEach(rt=>{
+      if(!rt.dateFrom||!rt.dateTo||rt.status==='cancelled')return;
+      const from=parseDate(rt.dateFrom),to=parseDate(rt.dateTo);
+      if(!from||!to)return;
+      const cur=new Date(from);
+      while(cur<=to){
+        const k=cur.toDateString();
+        if(!map[k])map[k]=[];
+        if(!map[k].find(x=>x.id===rt.id))map[k].push(rt);
+        cur.setDate(cur.getDate()+1);
+      }
+    });
+    return map;
+  },[roundTrips]);
+
+  // Index service stops by date
+  const serviceByDate=useMemo(()=>{
+    const map={};
+    (stopsCarBus||[]).forEach(st=>{
+      if(!st.vehicle||!st.startDate||!st.endDate)return;
+      const from=parseDate(st.startDate),to=parseDate(st.endDate);
+      if(!from||!to)return;
+      const cur=new Date(from);
+      while(cur<=to){
+        const k=cur.toDateString();
+        if(!map[k])map[k]=new Set();
+        map[k].add(st.vehicle);
+        cur.setDate(cur.getDate()+1);
+      }
+    });
+    return map;
+  },[stopsCarBus]);
+
+  const rtBlockedOnDate=useMemo(()=>{
+    return (date)=>{
+      const cars=new Set(),gds=new Set(),drs=new Set();
+      (roundTrips||[]).forEach(rt=>{
+        if(rt.status==='cancelled')return;
+        const from=parseDate(rt.dateFrom),to=parseDate(rt.dateTo);
+        if(!from||!to)return;
+        if(date>=from&&date<=to){
+          if(rt.vehicle)cars.add(rt.vehicle);
+          if(rt.guide)gds.add(rt.guide);
+          if(rt.driver)drs.add(rt.driver);
+        }
+      });
+      return{cars,guides:gds,drivers:drs};
+    };
+  },[roundTrips]);
+
   const getDayData=(date)=>{
     const k=date.toDateString();
     const dayTours=toursByDate[k]||[];
     const dayRentals=rentalsByDate[k]||[];
+    const dayRoundTrips=rtBlockedOnDate(date);
+    const dayRTList=roundTripsByDate[k]||[];
     const noCar=dayTours.filter(t=>!t.carNumber);
     const noGuide=dayTours.filter(t=>!t.guide);
     // Busy vehicles
     const busyCars=new Set();
     dayTours.forEach(t=>{if(t.carNumber)busyCars.add(t.carNumber)});
     dayRentals.forEach(r=>{if(r.vehicle)busyCars.add(r.vehicle)});
+    dayRoundTrips.cars.forEach(c=>busyCars.add(c));
     const freeCars=activeVehicles.filter(v=>!busyCars.has(v.name));
     // Busy guides
     const busyGuides=new Set();
     dayTours.forEach(t=>{if(t.guide)busyGuides.add(t.guide)});
+    dayRoundTrips.guides.forEach(g=>busyGuides.add(g));
     const freeGuides=activeGuides.filter(g=>!busyGuides.has(g.name));
     // Conflicts: vehicles used more than once
     const carUsage={};
@@ -1514,7 +1832,29 @@ function PlanningPage({tours,setTours,carRentals,vehicles,guides}){
     // Free drivers (from guides who drive)
     const busyDrivers=new Set();
     dayTours.forEach(t=>{if(t.driver)busyDrivers.add(t.driver)});
-    return{dayTours,dayRentals,noCar,noGuide,freeCars,freeGuides,conflicts,planned,unplanned,busyDrivers};
+    dayRoundTrips.drivers.forEach(d=>busyDrivers.add(d));
+    const inServiceCars=serviceByDate[k]||new Set();
+    // Merge groups: same tour name, same day, can share a vehicle
+    const mergeGroups=[];
+    const toursByName={};
+    dayTours.forEach(t=>{
+      if(t.tourStatus==='cancelled')return;
+      const baseName=(t.tour||'').replace(/ - (English|Spanish|Italian|French|German|Portuguese|Russian)$/,'').trim();
+      if(!baseName)return;
+      if(!toursByName[baseName])toursByName[baseName]=[];
+      toursByName[baseName].push(t);
+    });
+    Object.entries(toursByName).forEach(([name,group])=>{
+      if(group.length<2)return;
+      const totalPax=group.reduce((a,t)=>a+(t.adults||0)+(t.children||0),0);
+      // Check if already merged (all have same car, guide, driver)
+      const allSameCar=group.every(t=>t.carNumber&&t.carNumber===group[0].carNumber);
+      const allSameGuide=group.every(t=>t.guide&&t.guide===group[0].guide);
+      const allSameDriver=group.every(t=>t.driver&&t.driver===group[0].driver);
+      const alreadyMerged=allSameCar&&allSameGuide&&(allSameDriver||group.every(t=>t.guideIsDriver));
+      mergeGroups.push({name,tours:group,totalPax,alreadyMerged});
+    });
+    return{dayTours,dayRentals,dayRTList,noCar,noGuide,freeCars,freeGuides,conflicts,planned,unplanned,busyDrivers,dayRoundTrips,inServiceCars,mergeGroups};
   };
 
   const prevMonth=()=>{if(viewMonth===0){setViewMonth(11);setViewYear(y=>y-1)}else setViewMonth(m=>m-1)};
@@ -1524,14 +1864,16 @@ function PlanningPage({tours,setTours,carRentals,vehicles,guides}){
   // Monthly totals
   const monthStats=useMemo(()=>{
     let t=0,r=0,pl=0,unpl=0,conf=0;
+    const rtSet=new Set();
     calendarDays.filter(c=>c.inMonth).forEach(c=>{
       const dd=getDayData(c.date);
       t+=dd.dayTours.length;r+=dd.dayRentals.length;
       pl+=dd.planned.length;unpl+=dd.unplanned.length;
       conf+=dd.conflicts.length;
+      dd.dayRTList.forEach(rt=>rtSet.add(rt.id));
     });
-    return{t,r,pl,unpl,conf};
-  },[calendarDays,toursByDate,rentalsByDate,tours]);
+    return{t,r,pl,unpl,conf,rt:rtSet.size};
+  },[calendarDays,toursByDate,rentalsByDate,roundTripsByDate,tours]);
 
   // Detail panel for selected date
   const selData=selectedDate?getDayData(selectedDate):null;
@@ -1544,11 +1886,12 @@ function PlanningPage({tours,setTours,carRentals,vehicles,guides}){
       <div className="stat-card"><div className="label">Турове за {MNAMES[viewMonth]}</div><div className="value blue">{monthStats.t}</div></div>
       <div className="stat-card"><div className="label">Планирани</div><div className="value green">{monthStats.pl}</div></div>
       <div className="stat-card"><div className="label">Непланирани</div><div className="value" style={{color:monthStats.unpl>0?'var(--red)':'var(--green)'}}>{monthStats.unpl}</div></div>
+      <div className="stat-card"><div className="label">Обиколни</div><div className="value" style={{color:'var(--accent)'}}>{monthStats.rt}</div></div>
       <div className="stat-card"><div className="label">Наеми</div><div className="value orange">{monthStats.r}</div></div>
       <div className="stat-card"><div className="label">Конфликти</div><div className="value" style={{color:monthStats.conf>0?'var(--red)':'var(--green)'}}>{monthStats.conf}</div></div>
     </div>
 
-    <div style={{display:'flex',gap:20,alignItems:'flex-start'}}>
+    <div style={{display:'flex',gap:16,alignItems:'flex-start'}}>
       {/* LEFT: Calendar */}
       <div style={{flex:'1 1 auto',minWidth:0}}>
         {/* Month nav */}
@@ -1563,23 +1906,24 @@ function PlanningPage({tours,setTours,carRentals,vehicles,guides}){
           {DNAMES.map(d=><div key={d} className="cal-header">{d}</div>)}
           {calendarDays.map((cell,i)=>{
             const dd=getDayData(cell.date);
-            const total=dd.dayTours.length+dd.dayRentals.length;
+            const total=dd.dayTours.length+dd.dayRentals.length+dd.dayRTList.length;
             const hasIssue=dd.noCar.length>0||dd.noGuide.length>0||dd.conflicts.length>0;
             const isSel=selectedDate&&sameDay(selectedDate,cell.date);
             return <div key={i} className="cal-day" onClick={()=>setSelectedDate(new Date(cell.date))} style={{
               opacity:cell.inMonth?1:.35,
               cursor:'pointer',
               border:isSel?'2px solid var(--accent)':'1px solid var(--border)',
-              background:isToday(cell.date)?'rgba(200,165,78,.1)':isSel?'rgba(123,35,50,.04)':'var(--card)',
+              background:isToday(cell.date)?'rgba(79,70,229,.06)':isSel?'rgba(79,70,229,.04)':'var(--card)',
               transition:'all .1s'
             }}>
               <div style={{fontWeight:isToday(cell.date)?800:600,fontSize:13,marginBottom:4,color:isToday(cell.date)?'var(--gold)':cell.date.getDay()===0?'var(--red)':'var(--text)'}}>
                 {cell.date.getDate()}
               </div>
-              {dd.planned.length>0&&<div style={chipStyle('rgba(45,138,78,.12)','var(--green)')}>{dd.planned.length} {'✓'}</div>}
-              {dd.unplanned.length>0&&<div style={chipStyle('rgba(192,57,43,.1)','var(--red)')}>{dd.unplanned.length} {'?'}</div>}
-              {dd.dayRentals.length>0&&<div style={chipStyle('rgba(217,119,6,.1)','var(--orange)')}>{dd.dayRentals.length} наем</div>}
-              {dd.conflicts.length>0&&<div style={chipStyle('rgba(192,57,43,.12)','var(--red)')}>{'!'} конфл.</div>}
+              {dd.planned.length>0&&<div title={dd.planned.map(t=>(t.tour||t.name||'Тур')+' — '+(t.name||'')).join('\n')} style={chipStyle('rgba(5,150,105,.1)','var(--green)')}>{dd.planned.length} тур</div>}
+              {dd.unplanned.length>0&&<div title={dd.unplanned.map(t=>(t.tour||t.name||'Тур')+' — '+(t.name||'')).join('\n')} style={chipStyle('rgba(234,88,12,.08)','var(--orange)')}>{dd.unplanned.length} тур</div>}
+              {dd.dayRentals.length>0&&<div title={dd.dayRentals.map(r=>(r.vehicle||'Кола')+' — '+(r.client||'')).join('\n')} style={chipStyle('rgba(59,130,246,.12)','#3B82F6')}>{dd.dayRentals.length} наем</div>}
+              {dd.dayRTList.length>0&&<div title={dd.dayRTList.map(rt=>(rt.name||'Обиколен')+' — '+(rt.client||'')).join('\n')} style={chipStyle('rgba(79,70,229,.12)','var(--accent)')}>{dd.dayRTList.length>1?dd.dayRTList.length+' обик.':'🌍 обик.'}</div>}
+              {dd.conflicts.length>0&&<div title={dd.conflicts.join(', ')} style={chipStyle('rgba(220,38,38,.1)','var(--red)')}>{'!'} конфл.</div>}
             </div>
           })}
         </div>
@@ -1593,7 +1937,7 @@ function PlanningPage({tours,setTours,carRentals,vehicles,guides}){
             <div style={{fontSize:18,fontWeight:700}}>{fmtD(selectedDate)}</div>
             <div style={{fontSize:13,opacity:.8}}>{DNAMES[selectedDate.getDay()===0?6:selectedDate.getDay()-1]}, {MNAMES[selectedDate.getMonth()]}</div>
           </div>
-          <div style={{padding:'16px 18px',maxHeight:'65vh',overflowY:'auto'}}>
+          <div style={{padding:'16px 18px',maxHeight:'70vh',overflowY:'auto'}}>
 
             {/* Турове */}
             <div style={{marginBottom:16}}>
@@ -1609,6 +1953,7 @@ function PlanningPage({tours,setTours,carRentals,vehicles,guides}){
                 </div>
                 <div style={{display:'flex',flexWrap:'wrap',gap:'4px 12px',color:'var(--text2)'}}>
                   <span>Клиент: <strong style={{color:'var(--text)'}}>{t.name||'—'}</strong></span>
+                  <span style={{background:'rgba(79,70,229,.08)',color:'var(--accent)',padding:'1px 6px',borderRadius:8,fontSize:10,fontWeight:700}}>{(t.adults||0)+(t.children||0)} пакс{t.children?<span style={{opacity:.7}}> ({t.adults}+{t.children}д)</span>:null}</span>
                   {t.pickupTime&&<span>Час: <strong style={{color:'var(--text)'}}>{t.pickupTime}</strong></span>}
                   {isWalk&&<span className="badge badge-blue" style={{fontSize:9}}>Пешеходен</span>}
                 </div>
@@ -1622,10 +1967,19 @@ function PlanningPage({tours,setTours,carRentals,vehicles,guides}){
                     </span>:
                     <a href="#" onClick={e=>{e.preventDefault();setPopover({tourId:t.id,field:'car'})}} style={{color:'var(--red)',fontWeight:600,fontSize:11,textDecoration:'underline',cursor:'pointer'}}>{'✕'} Няма</a>}
                     {popover&&popover.tourId===t.id&&popover.field==='car'&&<div ref={popRef} style={{position:'absolute',right:10,zIndex:50,background:'var(--card)',border:'1px solid var(--border)',borderRadius:8,boxShadow:'0 4px 16px rgba(0,0,0,.15)',padding:10,minWidth:220,maxHeight:200,overflowY:'auto',marginTop:2}}>
-                      <div style={{fontSize:11,color:'var(--text2)',marginBottom:6,fontWeight:600}}>Свободни коли:</div>
-                      {selData.freeCars.length===0&&<div style={{fontSize:11,color:'var(--red)'}}>Няма свободни</div>}
+                      <div style={{fontSize:11,color:'var(--text2)',marginBottom:6,fontWeight:600}}>Избери кола:</div>
                       <div style={{display:'flex',flexDirection:'column',gap:3}}>
-                        {selData.freeCars.map(v=><div key={v.id} onClick={()=>assignCar(t.id,v.name)} style={{padding:'5px 8px',borderRadius:5,cursor:'pointer',fontSize:11,background:'rgba(45,138,78,.06)',border:'1px solid rgba(45,138,78,.15)',color:'var(--green)',fontWeight:500}} onMouseEnter={e=>e.currentTarget.style.background='rgba(45,138,78,.15)'} onMouseLeave={e=>e.currentTarget.style.background='rgba(45,138,78,.06)'}>{v.name}{v.seats?' ('+v.seats+')':''}</div>)}
+                        {activeVehicles.map(v=>{
+                          const isRT=selData.dayRoundTrips.cars.has(v.name);
+                          const isSvc=selData.inServiceCars.has(v.name);
+                          const isFree=selData.freeCars.find(fc=>fc.id===v.id);
+                          let bg,clr,suffix;
+                          if(isRT){bg='rgba(220,38,38,.05)';clr='var(--red)';suffix=' ● обиколен'}
+                          else if(isSvc){bg='rgba(234,88,12,.05)';clr='var(--orange)';suffix=' ● сервиз'}
+                          else if(!isFree){bg='rgba(217,119,6,.05)';clr='var(--gold)';suffix=' ● заета'}
+                          else{bg='rgba(45,138,78,.06)';clr='var(--green)';suffix=''}
+                          return <div key={v.id} onClick={()=>assignCar(t.id,v.name)} style={{padding:'5px 8px',borderRadius:5,cursor:'pointer',fontSize:11,background:bg,border:'1px solid '+clr+'25',color:clr,fontWeight:isFree?500:700}} onMouseEnter={e=>e.currentTarget.style.opacity='.8'} onMouseLeave={e=>e.currentTarget.style.opacity='1'}>{v.name}{v.seats?' ('+v.seats+')':''}{suffix}</div>
+                        })}
                       </div>
                     </div>}
                   </div>}
@@ -1665,6 +2019,42 @@ function PlanningPage({tours,setTours,carRentals,vehicles,guides}){
               </div>})}
             </div>
 
+
+            {/* Обединяване на турове */}
+            {selData.mergeGroups.filter(mg=>!mg.alreadyMerged).length>0&&<div style={{marginBottom:16}}>
+              <div style={{fontSize:13,fontWeight:700,color:'var(--purple)',marginBottom:8,borderBottom:'2px solid var(--purple)',paddingBottom:4}}>{'🔗'} Обединяване ({selData.mergeGroups.filter(mg=>!mg.alreadyMerged).length})</div>
+              {selData.mergeGroups.filter(mg=>!mg.alreadyMerged).map((mg,i)=>{
+                const ids=mg.tours.map(t=>t.id);
+                // Find which car can fit all
+                const guideCount=1; // one guide for all
+                const fittingCars=activeVehicles.filter(v=>{
+                  if(!v.active||!v.seats)return false;
+                  const pax=parseSeatsP(v.seats);
+                  return pax>=mg.totalPax+guideCount;
+                });
+                const fittingCarsGD=activeVehicles.filter(v=>{
+                  if(!v.active||!v.seats)return false;
+                  const pax=parseSeatsP(v.seats);
+                  return pax>=mg.totalPax;
+                });
+                // Get existing assignments from any tour in the group
+                const existingCar=mg.tours.find(t=>t.carNumber)?.carNumber||'';
+                const existingGuide=mg.tours.find(t=>t.guide)?.guide||'';
+                const existingDriver=mg.tours.find(t=>t.driver)?.driver||'';
+                const existingGID=mg.tours.some(t=>t.guideIsDriver);
+                return <MergeCard key={i} mg={mg} ids={ids} fittingCars={fittingCars} fittingCarsGD={fittingCarsGD}
+                  existingCar={existingCar} existingGuide={existingGuide} existingDriver={existingDriver} existingGID={existingGID}
+                  activeVehicles={activeVehicles} activeGuides={activeGuides} selData={selData} mergeTours={mergeTours} parseSeatsP={parseSeatsP}/>
+              })}
+            </div>}
+
+            {selData.mergeGroups.filter(mg=>mg.alreadyMerged).length>0&&<div style={{marginBottom:16}}>
+              {selData.mergeGroups.filter(mg=>mg.alreadyMerged).map((mg,i)=>
+                <div key={i} style={{padding:'6px 10px',marginBottom:4,borderRadius:6,background:'rgba(45,138,78,.06)',border:'1px solid rgba(45,138,78,.2)',fontSize:11,color:'var(--green)',fontWeight:600}}>
+                  {'✅'} {mg.name} — {mg.tours.length} резервации обединени ({mg.totalPax} пакс)
+                </div>
+              )}
+            </div>}
             {/* Наеми */}
             {selData.dayRentals.length>0&&<div style={{marginBottom:16}}>
               <div style={{fontSize:13,fontWeight:700,color:'var(--orange)',marginBottom:8,borderBottom:'2px solid var(--orange)',paddingBottom:4}}>Наеми ({selData.dayRentals.length})</div>
@@ -1675,21 +2065,68 @@ function PlanningPage({tours,setTours,carRentals,vehicles,guides}){
               </div>)}
             </div>}
 
+            {/* Обиколни турове */}
+            {selData.dayRTList.length>0&&<div style={{marginBottom:16}}>
+              <div style={{fontSize:13,fontWeight:700,color:'var(--accent)',marginBottom:8,borderBottom:'2px solid var(--accent)',paddingBottom:4}}>{'🌍'} Обиколни турове ({selData.dayRTList.length})</div>
+              {selData.dayRTList.map((rt,i)=>{
+                const from=parseDate(rt.dateFrom),to=parseDate(rt.dateTo);
+                const numDays=from&&to?Math.round((to-from)/(1000*60*60*24))+1:0;
+                const curDay=from&&selectedDate?Math.round((selectedDate-from)/(1000*60*60*24))+1:0;
+                const dayInfo=rt.days&&rt.days[curDay-1]?rt.days[curDay-1]:null;
+                return <div key={i} style={{padding:'10px 12px',marginBottom:6,borderRadius:8,background:'rgba(79,70,229,.04)',border:'1px solid rgba(79,70,229,.15)',fontSize:12}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
+                    <span style={{fontWeight:700,fontSize:13,color:'var(--accent)'}}>{rt.name||'Обиколен тур'}</span>
+                    <span style={{fontSize:10,padding:'2px 8px',borderRadius:10,background:'rgba(79,70,229,.08)',color:'var(--accent)',fontWeight:600}}>Ден {curDay}/{numDays}</span>
+                  </div>
+                  <div style={{display:'flex',flexWrap:'wrap',gap:'3px 12px',color:'var(--text2)',marginBottom:4}}>
+                    <span>Клиент: <strong style={{color:'var(--text)'}}>{rt.client||'—'}</strong></span>
+                    <span>Период: <strong style={{color:'var(--text)'}}>{rt.dateFrom} — {rt.dateTo}</strong></span>
+                  </div>
+                  <div style={{display:'flex',flexWrap:'wrap',gap:'3px 12px',color:'var(--text2)'}}>
+                    {rt.vehicle&&<span>🚐 <strong style={{color:'var(--text)'}}>{rt.vehicle}</strong></span>}
+                    {rt.guide&&<span>🧑‍🏫 <strong style={{color:'var(--text)'}}>{rt.guide}</strong></span>}
+                    {rt.driver&&<span>🚗 <strong style={{color:'var(--text)'}}>{rt.driver}</strong></span>}
+                  </div>
+                  {dayInfo&&dayInfo.description&&<div style={{marginTop:6,padding:'6px 8px',borderRadius:4,background:'rgba(79,70,229,.03)',fontSize:11,color:'var(--text)'}}>📍 {dayInfo.description}</div>}
+                  {dayInfo&&dayInfo.hotel&&<div style={{marginTop:3,fontSize:11,color:'var(--text2)'}}>🏨 {dayInfo.hotel}</div>}
+                  <div style={{marginTop:6,padding:'4px 8px',borderRadius:4,background:'rgba(192,57,43,.05)',fontSize:10,color:'var(--red)',fontWeight:600}}>🔒 Кола, гид и шофьор блокирани за периода</div>
+                </div>})}
+            </div>}
+
             {/* Конфликти */}
             {selData.conflicts.length>0&&<div style={{marginBottom:16}}>
               <div style={{fontSize:13,fontWeight:700,color:'var(--red)',marginBottom:8,borderBottom:'2px solid var(--red)',paddingBottom:4}}>{'!'} Конфликти</div>
-              {selData.conflicts.map((c,i)=><div key={i} style={{padding:'8px 10px',marginBottom:4,borderRadius:6,background:'rgba(192,57,43,.06)',border:'1px solid rgba(192,57,43,.2)',fontSize:12,color:'var(--red)',fontWeight:600}}>
+              {selData.conflicts.map((c,i)=><div key={i} style={{padding:'8px 10px',marginBottom:4,borderRadius:6,background:'rgba(220,38,38,.05)',border:'1px solid rgba(192,57,43,.2)',fontSize:12,color:'var(--red)',fontWeight:600}}>
                 {c} — използва се повече от веднъж!
               </div>)}
             </div>}
 
-            {/* Свободни коли */}
+            {/* Коли — статус */}
             <div style={{marginBottom:16}}>
-              <div style={{fontSize:13,fontWeight:700,color:'var(--green)',marginBottom:8,borderBottom:'2px solid var(--green)',paddingBottom:4}}>Свободни коли ({selData.freeCars.length})</div>
-              {selData.freeCars.length===0?<div style={{fontSize:12,color:'var(--red)',padding:'4px 0'}}>Всички коли са заети!</div>:
+              <div style={{fontSize:13,fontWeight:700,color:'var(--text)',marginBottom:8,borderBottom:'2px solid var(--border)',paddingBottom:4}}>Коли ({activeVehicles.length})</div>
               <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
-                {selData.freeCars.map(v=><span key={v.id} style={{padding:'3px 8px',borderRadius:6,background:'rgba(45,138,78,.08)',border:'1px solid rgba(45,138,78,.2)',fontSize:11,color:'var(--green)'}}>{v.name}</span>)}
-              </div>}
+                {activeVehicles.map(v=>{
+                  const isBusy=!selData.freeCars.find(fc=>fc.id===v.id);
+                  const isRT=selData.dayRoundTrips.cars.has(v.name);
+                  const isSvc=selData.inServiceCars.has(v.name);
+                  const isRental=selData.dayRentals.some(r=>r.vehicle===v.name);
+                  const isTour=selData.dayTours.some(t=>t.carNumber===v.name);
+                  let bg,clr,label;
+                  if(isRT){bg='rgba(220,38,38,.08)';clr='var(--red)';label=' ● обиколен'}
+                  else if(isSvc){bg='rgba(234,88,12,.08)';clr='var(--orange)';label=' ● сервиз'}
+                  else if(isRental){bg='rgba(59,130,246,.08)';clr='#3B82F6';label=' ● наем'}
+                  else if(isTour){bg='rgba(217,119,6,.08)';clr='var(--gold)';label=' ● тур'}
+                  else{bg='rgba(45,138,78,.08)';clr='var(--green)';label=''}
+                  return <span key={v.id} style={{padding:'3px 8px',borderRadius:6,background:bg,border:'1px solid '+clr+'33',fontSize:11,color:clr,fontWeight:isBusy?700:400}}>{v.name}{label}</span>
+                })}
+              </div>
+              <div style={{display:'flex',gap:12,marginTop:8,fontSize:10,color:'var(--text2)'}}>
+                <span><span style={{color:'var(--green)'}}>●</span> свободна</span>
+                <span><span style={{color:'var(--red)'}}>●</span> обиколен тур</span>
+                <span><span style={{color:'var(--orange)'}}>●</span> сервиз</span>
+                <span><span style={{color:'#3B82F6'}}>●</span> наем</span>
+                <span><span style={{color:'var(--gold)'}}>●</span> тур</span>
+              </div>
             </div>
 
             {/* Свободни гидове */}
@@ -1704,12 +2141,407 @@ function PlanningPage({tours,setTours,carRentals,vehicles,guides}){
           </div>
         </div>:<div style={{background:'var(--card)',borderRadius:10,border:'1px solid var(--border)',padding:'40px 20px',textAlign:'center',color:'var(--text2)'}}>
           <div style={{fontSize:32,marginBottom:8}}>{'\u{1F447}'}</div>
-          <div style={{fontSize:14}}>Кликни на ден от календара за детайли</div>
+          <div style={{fontSize:14}}>Кликни на ден от календара</div>
         </div>}
       </div>
     </div>
   </div>
 }
+
+
+// ============= ROUND TRIPS (ОБИКОЛНИ ТУРОВЕ) =============
+function RoundTripsPage({roundTrips,setRoundTrips,vehicles,guides,tours,carRentals,stopsCarBus}){
+  const [search,setSearch]=useState('');
+  const [editing,setEditing]=useState(null);
+  const [delId,setDelId]=useState(null);
+  const [viewMode,setViewMode]=useState('list');
+  
+  const filtered=useMemo(()=>{
+    const s=search.toLowerCase();
+    return !s?roundTrips:roundTrips.filter(rt=>
+      (rt.name||'').toLowerCase().includes(s)||
+      (rt.client||'').toLowerCase().includes(s)||
+      (rt.vehicle||'').toLowerCase().includes(s)||
+      (rt.guide||'').toLowerCase().includes(s)||
+      (rt.dateFrom||'').includes(s)
+    );
+  },[roundTrips,search]);
+
+  const blank={
+    name:'',dateFrom:'',dateTo:'',vehicle:'',guide:'',driver:'',
+    client:'',clientPhone:'',clientEmail:'',
+    adults:null,children:null,
+    totalPrice:null,pricePerDay:null,
+    status:'planned',
+    route:'',notes:'',
+    days:[]
+  };
+
+  const save=(form)=>{
+    // Auto-generate day entries
+    const from=parseDate(form.dateFrom),to=parseDate(form.dateTo);
+    let numDays=0;
+    if(from&&to){numDays=Math.round((to-from)/(1000*60*60*24))+1}
+    // Keep existing days or create new ones
+    const existingDays=form.days||[];
+    const days=[];
+    for(let i=0;i<numDays;i++){
+      const d=new Date(from);d.setDate(d.getDate()+i);
+      const dateStr=String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear();
+      const existing=existingDays.find(ed=>ed.date===dateStr);
+      days.push(existing||{date:dateStr,hotel:'',description:'',expFuel:null,expFood:null,expEntryFees:null,expParking:null,expHotel:null,expOther:null,notes:''});
+    }
+    const updated={...form,days,nights:Math.max(0,numDays-1)};
+    if(form.id){setRoundTrips(p=>p.map(r=>r.id===form.id?updated:r))}
+    else{setRoundTrips(p=>[...p,{...updated,id:genId(p)}])}
+    setEditing(null);
+  };
+
+  const del=()=>{setRoundTrips(p=>p.filter(r=>r.id!==delId));setDelId(null)};
+  
+  const totalRevenue=filtered.reduce((a,rt)=>a+(rt.totalPrice||0),0);
+  const totalExpenses=filtered.reduce((a,rt)=>{
+    return a+(rt.days||[]).reduce((s,d)=>(s+(d.expFuel||0)+(d.expFood||0)+(d.expEntryFees||0)+(d.expParking||0)+(d.expHotel||0)+(d.expOther||0)),0);
+  },0);
+
+  // Check for resource conflicts
+  const hasConflict=(rt)=>{
+    if(!rt.dateFrom||!rt.dateTo)return false;
+    const from=parseDate(rt.dateFrom),to=parseDate(rt.dateTo);
+    if(!from||!to)return false;
+    // Check against other round trips
+    for(const other of roundTrips){
+      if(other.id===rt.id||other.status==='cancelled')continue;
+      const of=parseDate(other.dateFrom),ot=parseDate(other.dateTo);
+      if(!of||!ot)continue;
+      if(from<=ot&&to>=of){
+        if(rt.vehicle&&rt.vehicle===other.vehicle)return'Кола '+rt.vehicle+' е заета от друг обиколен тур';
+        if(rt.guide&&rt.guide===other.guide)return'Гид '+rt.guide+' е зает от друг обиколен тур';
+        if(rt.driver&&rt.driver===other.driver)return'Шофьор '+rt.driver+' е зает от друг обиколен тур';
+      }
+    }
+    // Check against regular tours
+    const cur=new Date(from);
+    while(cur<=to){
+      const dateStr=String(cur.getDate()).padStart(2,'0')+'.'+String(cur.getMonth()+1).padStart(2,'0')+'.'+cur.getFullYear();
+      for(const t of tours){
+        if(t.date===dateStr&&t.tourStatus!=='cancelled'){
+          if(rt.vehicle&&t.carNumber===rt.vehicle)return'Кола конфликт с тур на '+dateStr;
+          if(rt.guide&&t.guide===rt.guide)return'Гид конфликт с тур на '+dateStr;
+          if(rt.driver&&t.driver===rt.driver)return'Шофьор конфликт с тур на '+dateStr;
+        }
+      }
+      // Check against rentals
+      for(const r of (carRentals||[])){
+        if(!r.dateFrom||!r.vehicle)continue;
+        const rf=parseDate(r.dateFrom),rto=parseDate(r.dateTo||r.dateFrom);
+        if(rf&&rto&&cur>=rf&&cur<=rto&&rt.vehicle===r.vehicle)return'Кола заета от рент-а-кар на '+dateStr;
+      }
+      cur.setDate(cur.getDate()+1);
+    }
+    return false;
+  };
+
+  const statusColors={planned:'var(--green)',active:'var(--accent)',completed:'var(--text2)',cancelled:'var(--red)'};
+  const statusLabels={planned:'📌 Планиран',active:'🚐 Активен',completed:'✅ Завършен',cancelled:'❌ Отменен'};
+
+  return <div>
+    <div className="topbar">
+      <h2>{'🌍'} Обиколни турове ({filtered.length})</h2>
+      <div style={{display:'flex',gap:8}}>
+        <input className="search-box" placeholder="Търси..." value={search} onChange={e=>setSearch(e.target.value)}/>
+        <button className="btn btn-primary" onClick={()=>setEditing({...blank})}>+ Нов обиколен тур</button>
+      </div>
+    </div>
+    <div className="stats-row">
+      <div className="stat-card"><div className="label">Общо турове</div><div className="value blue">{filtered.length}</div></div>
+      <div className="stat-card"><div className="label">Приход</div><div className="value green">{totalRevenue.toFixed(2)} €</div></div>
+      <div className="stat-card"><div className="label">Разходи</div><div className="value" style={{color:'var(--red)'}}>{totalExpenses.toFixed(2)} €</div></div>
+      <div className="stat-card"><div className="label">Баланс</div><div className="value" style={{color:totalRevenue-totalExpenses>=0?'var(--green)':'var(--red)'}}>{(totalRevenue-totalExpenses).toFixed(2)} €</div></div>
+    </div>
+    <div className="scroll-table"><table><thead><tr>
+      <th></th><th>Име</th><th>Клиент</th><th>От</th><th>До</th><th>Нощ.</th>
+      <th>Кола</th><th>Гид</th><th>Шофьор</th>
+      <th>Цена €</th><th>Разходи €</th><th>Баланс €</th><th>Статус</th><th></th>
+    </tr></thead>
+    <tbody>{filtered.map(rt=>{
+      const conflict=hasConflict(rt);
+      const exp=(rt.days||[]).reduce((s,d)=>(s+(d.expFuel||0)+(d.expFood||0)+(d.expEntryFees||0)+(d.expParking||0)+(d.expHotel||0)+(d.expOther||0)),0);
+      const bal=(rt.totalPrice||0)-exp;
+      return <tr key={rt.id} style={{background:conflict?'rgba(192,57,43,.05)':''}}>
+        <td>{conflict&&<span title={conflict} style={{color:'var(--red)',cursor:'help'}}>⚠️</span>}</td>
+        <td><strong>{rt.name||'—'}</strong></td>
+        <td>{rt.client}</td>
+        <td style={{whiteSpace:'nowrap'}}>{rt.dateFrom}</td>
+        <td style={{whiteSpace:'nowrap'}}>{rt.dateTo}</td>
+        <td><strong>{rt.nights||0}</strong></td>
+        <td>{rt.vehicle}</td>
+        <td>{rt.guide}</td>
+        <td>{rt.driver}</td>
+        <td style={{textAlign:'right',color:'var(--green)',fontWeight:700}}>{rt.totalPrice||0}</td>
+        <td style={{textAlign:'right',color:'var(--red)'}}>{exp.toFixed(2)}</td>
+        <td style={{textAlign:'right',fontWeight:700,color:bal>=0?'var(--green)':'var(--red)'}}>{bal.toFixed(2)}</td>
+        <td><span className="rt-badge" style={{background:rt.status==='cancelled'?'rgba(220,38,38,.1)':rt.status==='completed'?'rgba(0,0,0,.06)':rt.status==='active'?'rgba(79,70,229,.08)':'rgba(5,150,105,.08)',color:statusColors[rt.status]||'var(--text2)'}}>{statusLabels[rt.status]||rt.status}</span></td>
+        <td style={{whiteSpace:'nowrap'}}><button className="btn btn-ghost btn-sm" onClick={()=>setEditing({...rt})}>✎</button>{' '}
+          <button className="btn btn-danger btn-sm" onClick={()=>setDelId(rt.id)}>✕</button></td>
+      </tr>})}</tbody></table></div>
+    {editing&&<Modal title={editing.id?"Редактирай обиколен тур":"Нов обиколен тур"} onClose={()=>setEditing(null)}>
+      <RoundTripForm data={editing} onSave={save} onCancel={()=>setEditing(null)} vehicles={vehicles} guides={guides} roundTrips={roundTrips} tours={tours} carRentals={carRentals} stopsCarBus={stopsCarBus}/>
+    </Modal>}
+    {delId&&<ConfirmModal msg="Изтрий обиколен тур?" onConfirm={del} onCancel={()=>setDelId(null)}/>}
+  </div>
+}
+
+function RoundTripForm({data,onSave,onCancel,vehicles,guides,roundTrips,tours,carRentals,stopsCarBus}){
+  const [f,setF]=useState(data);
+  const u=(k,v)=>setF(p=>({...p,[k]:v}));
+  const [formTab,setFormTab]=useState('info');
+  const toISO=(d)=>d&&d.includes('.')?d.split('.').reverse().join('-'):(d||'');
+  const fromISO=(v)=>{if(!v)return '';const p=v.split('-');return p[2]+'.'+p[1]+'.'+p[0]};
+  const vList=(vehicles||[]).filter(v=>v.active);
+  
+  const from=parseDate(f.dateFrom),to=parseDate(f.dateTo);
+  const numDays=(from&&to)?Math.round((to-from)/(1000*60*60*24))+1:0;
+  const nights=Math.max(0,numDays-1);
+  
+  // Generate days array when dates change
+  React.useEffect(()=>{
+    if(!from||!to||numDays<=0)return;
+    setF(prev=>{
+      const existing=prev.days||[];
+      const days=[];
+      for(let i=0;i<numDays;i++){
+        const d=new Date(from);d.setDate(d.getDate()+i);
+        const dateStr=String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear();
+        const ex=existing.find(ed=>ed.date===dateStr);
+        days.push(ex||{date:dateStr,hotel:'',description:'',expFuel:null,expFood:null,expEntryFees:null,expParking:null,expHotel:null,expOther:null,notes:''});
+      }
+      return{...prev,days,nights};
+    });
+  },[f.dateFrom,f.dateTo]);
+  
+  // Resource blocking
+  const blockedResources=useMemo(()=>{
+    if(!f.dateFrom||!f.dateTo)return{cars:new Set(),guides:new Set(),drivers:new Set()};
+    const fr=parseDate(f.dateFrom),t=parseDate(f.dateTo);
+    if(!fr||!t)return{cars:new Set(),guides:new Set(),drivers:new Set()};
+    const cars=new Set(),gds=new Set(),drs=new Set();
+    // Other round trips
+    (roundTrips||[]).forEach(rt=>{
+      if(rt.id===f.id||rt.status==='cancelled')return;
+      const rf=parseDate(rt.dateFrom),rto=parseDate(rt.dateTo);
+      if(!rf||!rto)return;
+      if(fr<=rto&&t>=rf){
+        if(rt.vehicle)cars.add(rt.vehicle);
+        if(rt.guide)gds.add(rt.guide);
+        if(rt.driver)drs.add(rt.driver);
+      }
+    });
+    // Regular tours in the period
+    const cur=new Date(fr);
+    while(cur<=t){
+      const dateStr=String(cur.getDate()).padStart(2,'0')+'.'+String(cur.getMonth()+1).padStart(2,'0')+'.'+cur.getFullYear();
+      (tours||[]).forEach(tour=>{
+        if(tour.date===dateStr&&tour.tourStatus!=='cancelled'){
+          if(tour.carNumber)cars.add(tour.carNumber);
+          if(tour.guide)gds.add(tour.guide);
+          if(tour.driver)drs.add(tour.driver);
+        }
+      });
+      cur.setDate(cur.getDate()+1);
+    }
+    // Rentals in the period
+    (carRentals||[]).forEach(r=>{
+      if(!r.dateFrom||!r.vehicle)return;
+      const rf=parseDate(r.dateFrom),rto=parseDate(r.dateTo||r.dateFrom);
+      if(!rf||!rto)return;
+      if(fr<=rto&&t>=rf)cars.add(r.vehicle);
+    });
+    return{cars,guides:gds,drivers:drs};
+  },[f.dateFrom,f.dateTo,f.id,roundTrips,tours,carRentals]);
+
+  const svcBlockedCars=useMemo(()=>{
+    if(!f.dateFrom||!f.dateTo||!stopsCarBus)return new Set();
+    const fr=parseDate(f.dateFrom),t=parseDate(f.dateTo);
+    if(!fr||!t)return new Set();
+    const blocked=new Set();
+    stopsCarBus.forEach(st=>{
+      if(!st.vehicle)return;
+      const sf=parseDate(st.startDate),sto=parseDate(st.endDate);
+      if(!sf||!sto)return;
+      if(fr<=sto&&t>=sf)blocked.add(st.vehicle);
+    });
+    return blocked;
+  },[f.dateFrom,f.dateTo,stopsCarBus]);
+
+  const totalExp=(f.days||[]).reduce((s,d)=>(s+(d.expFuel||0)+(d.expFood||0)+(d.expEntryFees||0)+(d.expParking||0)+(d.expHotel||0)+(d.expOther||0)),0);
+  const balance=(f.totalPrice||0)-totalExp;
+
+  const updateDay=(idx,key,val)=>{
+    setF(prev=>{
+      const days=[...prev.days];
+      days[idx]={...days[idx],[key]:val};
+      return{...prev,days};
+    });
+  };
+
+  const DNAMES=['Нд','Пн','Вт','Ср','Чт','Пт','Сб'];
+  const dayName=(dateStr)=>{const d=parseDate(dateStr);return d?DNAMES[d.getDay()]:''};
+
+  return <div>
+    <div style={{display:'flex',gap:12,marginBottom:16,alignItems:'center'}}>
+      <div style={{flex:1}}>
+        <select value={f.status||'planned'} onChange={e=>u('status',e.target.value)} style={{padding:'6px 12px',borderRadius:6,fontSize:13,fontWeight:600,border:'1px solid var(--border)',cursor:'pointer',
+          background:f.status==='active'?'rgba(79,70,229,.08)':f.status==='completed'?'rgba(0,0,0,.06)':f.status==='cancelled'?'rgba(220,38,38,.1)':'rgba(5,150,105,.08)',
+          color:f.status==='active'?'var(--accent)':f.status==='completed'?'var(--text2)':f.status==='cancelled'?'var(--red)':'var(--green)'}}>
+          <option value="planned">📌 Планиран</option>
+          <option value="active">🚐 Активен</option>
+          <option value="completed">✅ Завършен</option>
+          <option value="cancelled">❌ Отменен</option>
+        </select>
+      </div>
+      {numDays>0&&<div style={{fontSize:13,color:'var(--text2)',fontWeight:600}}>{numDays} дни / {nights} нощувки</div>}
+    </div>
+    
+    <div style={{display:'flex',gap:0,marginBottom:20,borderBottom:'2px solid var(--border)'}}>
+      {[{k:'info',l:'📋 Основни'},{k:'days',l:'📅 Дни ('+numDays+')'},{k:'finance',l:'💰 Финанси'}].map(tab=>
+        <button key={tab.k} type="button" onClick={()=>setFormTab(tab.k)} style={{padding:'10px 20px',fontSize:13,fontWeight:600,border:'none',cursor:'pointer',
+          background:'transparent',color:formTab===tab.k?'var(--accent)':'var(--text2)',
+          borderBottom:formTab===tab.k?'2px solid var(--accent)':'2px solid transparent',marginBottom:'-2px',transition:'all .15s'}}>
+          {tab.l}
+        </button>
+      )}
+    </div>
+
+    {formTab==='info'&&<div>
+      <div className="form-grid">
+        <div className="form-group full"><label>Име на тура</label><input value={f.name||''} onChange={e=>u('name',e.target.value)} placeholder="напр. Тракийска обиколка 5 дни"/></div>
+        <div className="form-group"><label>От дата</label><input type="date" value={toISO(f.dateFrom)} onChange={e=>u('dateFrom',fromISO(e.target.value))}/></div>
+        <div className="form-group"><label>До дата</label><input type="date" value={toISO(f.dateTo)} onChange={e=>u('dateTo',fromISO(e.target.value))}/></div>
+        <div className="form-group full"><label>Маршрут</label><input value={f.route||''} onChange={e=>u('route',e.target.value)} placeholder="напр. Пловдив → Казанлък → В. Търново → София"/></div>
+      </div>
+      <h4 style={{margin:'20px 0 10px',color:'var(--text2)',fontSize:13,borderTop:'1px solid var(--border)',paddingTop:16}}>КЛИЕНТ</h4>
+      <div className="form-grid">
+        <div className="form-group"><label>Име клиент</label><input value={f.client||''} onChange={e=>u('client',e.target.value)}/></div>
+        <div className="form-group"><label>Телефон</label><input type="tel" value={f.clientPhone||''} onChange={e=>u('clientPhone',e.target.value)}/></div>
+        <div className="form-group full"><label>Мейл</label><input type="email" value={f.clientEmail||''} onChange={e=>u('clientEmail',e.target.value)}/></div>
+        <div className="form-group"><label>Възрастни</label><input type="number" value={f.adults||''} onChange={e=>u('adults',+e.target.value||null)}/></div>
+        <div className="form-group"><label>Деца</label><input type="number" value={f.children||''} onChange={e=>u('children',+e.target.value||null)}/></div>
+      </div>
+      <h4 style={{margin:'20px 0 10px',color:'var(--text2)',fontSize:13,borderTop:'1px solid var(--border)',paddingTop:16}}>ЕКИП И ТРАНСПОРТ</h4>
+      {f.dateFrom&&f.dateTo&&<div style={{marginBottom:12,padding:10,background:'rgba(79,70,229,.04)',borderRadius:6,border:'1px solid rgba(79,70,229,.08)',fontSize:12,color:'var(--text2)'}}>
+        🔒 Ресурсите ще бъдат блокирани за целия период {f.dateFrom} — {f.dateTo}. Няма да могат да се използват за други турове или наеми.
+      </div>}
+      <div className="form-grid">
+        <div className="form-group full"><label>Превозно средство</label>
+          <select value={f.vehicle||''} onChange={e=>u('vehicle',e.target.value)} style={{width:'100%',color:blockedResources.cars.has(f.vehicle)?'var(--red)':svcBlockedCars.has(f.vehicle)?'var(--orange)':'inherit'}}>
+            <option value="">— избери кола —</option>
+            {vList.map(v=>{const isRT=blockedResources.cars.has(v.name);const isSvc=svcBlockedCars.has(v.name);return <option key={v.id} value={v.name} style={{color:isRT?'var(--red)':isSvc?'var(--orange)':'inherit',fontWeight:isRT||isSvc?700:'normal'}}>{v.name}{v.seats?' ('+v.seats+')':''}{isRT?' ● зает':isSvc?' ● сервиз':''}</option>})}
+          </select>
+          {blockedResources.cars.has(f.vehicle)&&<div style={{marginTop:4,padding:'6px 10px',borderRadius:6,fontSize:11,background:'rgba(220,38,38,.08)',border:'1px solid rgba(192,57,43,.25)',color:'var(--red)',fontWeight:600}}>⚠️ Тази кола е заета за периода!</div>}
+          {svcBlockedCars.has(f.vehicle)&&<div style={{marginTop:4,padding:'6px 10px',borderRadius:6,fontSize:11,background:'rgba(234,88,12,.08)',border:'1px solid rgba(234,88,12,.2)',color:'var(--orange)',fontWeight:600}}>🔧 Тази кола е в сервиз за периода!</div>}
+        </div>
+        <div className="form-group"><label>Гид</label>
+          <select value={f.guide||''} onChange={e=>u('guide',e.target.value)} style={{width:'100%',color:blockedResources.guides.has(f.guide)?'var(--red)':'inherit'}}>
+            <option value="">— избери гид —</option>
+            {guides.map(g=>{const isRT=blockedResources.guides.has(g.name);return <option key={g.id} value={g.name} style={{color:isRT?'var(--red)':'inherit',fontWeight:isRT?700:'normal'}}>{g.name}{isRT?' ● зает':''}</option>})}
+          </select>
+          {blockedResources.guides.has(f.guide)&&<div style={{marginTop:4,padding:'6px 10px',borderRadius:6,fontSize:11,background:'rgba(220,38,38,.08)',border:'1px solid rgba(192,57,43,.25)',color:'var(--red)',fontWeight:600}}>⚠️ Този гид е зает за периода!</div>}
+        </div>
+        <div className="form-group"><label>Шофьор</label><input value={f.driver||''} onChange={e=>u('driver',e.target.value)}/></div>
+      </div>
+      <div className="form-group full"><label>Обща бележка</label><textarea rows={2} value={f.notes||''} onChange={e=>u('notes',e.target.value)} style={{width:'100%',padding:'8px 10px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg)',color:'var(--text)',fontSize:13}}/></div>
+    </div>}
+
+    {formTab==='days'&&<div>
+      {numDays===0&&<div style={{padding:30,textAlign:'center',color:'var(--text2)'}}>Избери начална и крайна дата за да се генерират дните.</div>}
+      {numDays>0&&<div className="rt-timeline">
+        {(f.days||[]).map((day,i)=>{
+          const isFirst=i===0,isLast=i===(f.days||[]).length-1;
+          return <div key={i} className="rt-day-card">
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+              <div>
+                <strong style={{fontSize:15,color:'var(--accent)'}}>Ден {i+1}</strong>
+                <span style={{marginLeft:8,fontSize:13,color:'var(--text2)'}}>{day.date} ({dayName(day.date)})</span>
+                {isFirst&&<span className="rt-badge" style={{marginLeft:8,background:'rgba(5,150,105,.08)',color:'var(--green)'}}>Начало</span>}
+                {isLast&&<span className="rt-badge" style={{marginLeft:8,background:'rgba(220,38,38,.08)',color:'var(--red)'}}>Край</span>}
+              </div>
+              {!isLast&&<span style={{fontSize:12,color:'var(--text2)'}}>🏨 Нощ {i+1}</span>}
+            </div>
+            <div className="form-grid">
+              <div className="form-group full"><label>Описание / маршрут за деня</label><input value={day.description||''} onChange={e=>updateDay(i,'description',e.target.value)} placeholder="Какво се прави този ден..."/></div>
+              {!isLast&&<div className="form-group full"><label>Хотел</label><input value={day.hotel||''} onChange={e=>updateDay(i,'hotel',e.target.value)} placeholder="Име на хотел"/></div>}
+              <div className="form-group"><label>Гориво €</label><input type="number" step="0.01" value={day.expFuel||''} onChange={e=>updateDay(i,'expFuel',+e.target.value||null)}/></div>
+              <div className="form-group"><label>Храна €</label><input type="number" step="0.01" value={day.expFood||''} onChange={e=>updateDay(i,'expFood',+e.target.value||null)}/></div>
+              <div className="form-group"><label>Входни такси €</label><input type="number" step="0.01" value={day.expEntryFees||''} onChange={e=>updateDay(i,'expEntryFees',+e.target.value||null)}/></div>
+              <div className="form-group"><label>Паркинг €</label><input type="number" step="0.01" value={day.expParking||''} onChange={e=>updateDay(i,'expParking',+e.target.value||null)}/></div>
+              <div className="form-group"><label>Хотел €</label><input type="number" step="0.01" value={day.expHotel||''} onChange={e=>updateDay(i,'expHotel',+e.target.value||null)}/></div>
+              <div className="form-group"><label>Други €</label><input type="number" step="0.01" value={day.expOther||''} onChange={e=>updateDay(i,'expOther',+e.target.value||null)}/></div>
+            </div>
+            <div className="form-group full"><label>Бележки</label><input value={day.notes||''} onChange={e=>updateDay(i,'notes',e.target.value)}/></div>
+          </div>})}
+      </div>}
+    </div>}
+
+    {formTab==='finance'&&<div>
+      <div className="form-grid">
+        <div className="form-group"><label>Обща цена €</label><input type="number" step="0.01" value={f.totalPrice||''} onChange={e=>u('totalPrice',+e.target.value||null)}/></div>
+        <div className="form-group"><label>Цена на ден €</label>
+          <div style={{padding:'8px 10px',borderRadius:6,border:'1px solid var(--border)',background:'var(--card2)',fontSize:14,fontWeight:700,color:'var(--accent)'}}>{numDays>0?((f.totalPrice||0)/numDays).toFixed(2):'—'}</div>
+        </div>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12,margin:'20px 0'}}>
+        <div style={{background:'var(--card2)',borderRadius:8,padding:14,textAlign:'center',border:'1px solid var(--border)'}}>
+          <div style={{fontSize:12,color:'var(--text2)',marginBottom:4}}>Приход</div>
+          <div style={{fontSize:22,fontWeight:700,color:'var(--green)'}}>{(f.totalPrice||0).toFixed(2)} €</div>
+        </div>
+        <div style={{background:'var(--card2)',borderRadius:8,padding:14,textAlign:'center',border:'1px solid var(--border)'}}>
+          <div style={{fontSize:12,color:'var(--text2)',marginBottom:4}}>Разходи</div>
+          <div style={{fontSize:22,fontWeight:700,color:'var(--red)'}}>{totalExp.toFixed(2)} €</div>
+        </div>
+        <div style={{background:'var(--card2)',borderRadius:8,padding:14,textAlign:'center',border:'1px solid var(--border)'}}>
+          <div style={{fontSize:12,color:'var(--text2)',marginBottom:4}}>Баланс</div>
+          <div style={{fontSize:22,fontWeight:700,color:balance>=0?'var(--green)':'var(--red)'}}>{balance.toFixed(2)} €</div>
+        </div>
+      </div>
+      {(f.days||[]).length>0&&<div>
+        <h4 style={{margin:'12px 0 8px',color:'var(--text2)',fontSize:13}}>Разходи по дни</h4>
+        <div className="scroll-table"><table><thead><tr>
+          <th>Ден</th><th>Дата</th><th>Гориво</th><th>Храна</th><th>Входни</th><th>Паркинг</th><th>Хотел</th><th>Други</th><th>Общо</th>
+        </tr></thead>
+        <tbody>{(f.days||[]).map((d,i)=>{
+          const dayTotal=(d.expFuel||0)+(d.expFood||0)+(d.expEntryFees||0)+(d.expParking||0)+(d.expHotel||0)+(d.expOther||0);
+          return <tr key={i}>
+            <td><strong>{i+1}</strong></td><td>{d.date}</td>
+            <td style={{textAlign:'right'}}>{d.expFuel||'—'}</td>
+            <td style={{textAlign:'right'}}>{d.expFood||'—'}</td>
+            <td style={{textAlign:'right'}}>{d.expEntryFees||'—'}</td>
+            <td style={{textAlign:'right'}}>{d.expParking||'—'}</td>
+            <td style={{textAlign:'right'}}>{d.expHotel||'—'}</td>
+            <td style={{textAlign:'right'}}>{d.expOther||'—'}</td>
+            <td style={{textAlign:'right',fontWeight:700}}>{dayTotal>0?dayTotal.toFixed(2):'—'}</td>
+          </tr>})}
+          <tr style={{borderTop:'2px solid var(--border)',fontWeight:700}}>
+            <td colSpan={2}>ОБЩО</td>
+            <td style={{textAlign:'right'}}>{(f.days||[]).reduce((s,d)=>s+(d.expFuel||0),0).toFixed(2)}</td>
+            <td style={{textAlign:'right'}}>{(f.days||[]).reduce((s,d)=>s+(d.expFood||0),0).toFixed(2)}</td>
+            <td style={{textAlign:'right'}}>{(f.days||[]).reduce((s,d)=>s+(d.expEntryFees||0),0).toFixed(2)}</td>
+            <td style={{textAlign:'right'}}>{(f.days||[]).reduce((s,d)=>s+(d.expParking||0),0).toFixed(2)}</td>
+            <td style={{textAlign:'right'}}>{(f.days||[]).reduce((s,d)=>s+(d.expHotel||0),0).toFixed(2)}</td>
+            <td style={{textAlign:'right'}}>{(f.days||[]).reduce((s,d)=>s+(d.expOther||0),0).toFixed(2)}</td>
+            <td style={{textAlign:'right',color:'var(--red)'}}>{totalExp.toFixed(2)}</td>
+          </tr>
+        </tbody></table></div>
+      </div>}
+    </div>}
+
+    <div className="form-actions" style={{marginTop:16}}>
+      <button className="btn btn-ghost" onClick={onCancel}>Отказ</button>
+      <button className="btn btn-primary" onClick={()=>onSave(f)}>Запази</button>
+    </div>
+  </div>
+}
+
 
 // ============= MAIN APP =============
 function App(){
@@ -1723,6 +2555,7 @@ function App(){
   const [tours,setTours]=useState(INIT.tours);
   const [catalog,setCatalog]=useState(()=>buildInitialCatalog(INIT.tours));
   const [carRentals,setCarRentals]=useState([]);
+  const [roundTrips,setRoundTrips]=useState(INIT.roundTrips||[]);
   const [vehicles,setVehicles]=useState(INIT.vehicles||[
     {id:1,name:'СВ 0470 ММ - H1бус',seats:'8+1',active:true},
     {id:2,name:'РВ 4806 ХС-Е класа',seats:'3+1',active:true},
@@ -1739,18 +2572,19 @@ function App(){
   ]);
   const navItems=[
     {id:'dashboard',label:'Dashboard',icon:'\u{1F4CA}'},
-    {group:'ТУРОВЕ'},
     {id:'planning',label:'Планиране',icon:'\u{1F4C5}'},
+    {group:'ПРОДАЖБИ'},
+    {id:'tours',label:'Турове',icon:'\u{1F5D3}'},
+    {id:'roundTrips',label:'Обиколни турове',icon:'\u{1F30D}'},
+    {id:'carRental',label:'Коли под наем',icon:'\u{1F511}'},
     {id:'catalog',label:'Каталог турове',icon:'\u{1F4E6}'},
-    {id:'tours',label:'Месечни турове',icon:'\u{1F5D3}'},
     {group:'ХОРА'},
-    {id:'guides',label:'Гидове',icon:'\u{1F9D1}\u200d\u{1F3EB}'},
+    {id:'guides',label:'Гидове',icon:'\u{1F9D1}‍\u{1F3EB}'},
     {id:'guideDossier',label:'Досиета гидове',icon:'\u{1F4CB}'},
     {id:'stopsGuide',label:'STOP Гидове',icon:'\u{1F6AB}'},
     {group:'ТРАНСПОРТ'},
     {id:'fleet',label:'Автопарк',icon:'\u{1F697}'},
-    {id:'carRental',label:'Наем автомобил',icon:'\u{1F511}'},
-    {id:'fuel',label:'Гориво',icon:'\u26FD'},
+    {id:'fuel',label:'Гориво',icon:'⛽'},
     {id:'stopsCarBus',label:'STOP Бус/Кола',icon:'\u{1F690}'},
     {id:'carTasks',label:'Задачи коли',icon:'\u{1F527}'},
     {id:'fines',label:'Фишове',icon:'\u{1F4DD}'},
@@ -1758,33 +2592,40 @@ function App(){
   const renderPage=()=>{
     switch(page){
       case 'dashboard': return <Dashboard tours={tours} guides={guides} fuel={fuel} carTasks={carTasks}/>;
-      case 'planning': return <PlanningPage tours={tours} setTours={setTours} carRentals={carRentals} vehicles={vehicles} guides={guides}/>;
+      case 'planning': return <PlanningPage tours={tours} setTours={setTours} carRentals={carRentals} roundTrips={roundTrips} vehicles={vehicles} guides={guides} stopsCarBus={stopsCarBus}/>;
       case 'catalog': return <CatalogPage catalog={catalog} setCatalog={setCatalog}/>;
-      case 'tours': return <ToursPage tours={tours} setTours={setTours} guides={guides} catalog={catalog} vehicles={vehicles}/>;
+      case 'tours': return <ToursPage tours={tours} setTours={setTours} guides={guides} catalog={catalog} vehicles={vehicles} roundTrips={roundTrips} stopsCarBus={stopsCarBus}/>;
       case 'guides': return <GuidesPage guides={guides} setGuides={setGuides}/>;
       case 'guideDossier': return <GuideDossierPage tours={tours} guides={guides} stopsGuide={stopsGuide}/>;
+      case 'stopsGuide': return <StopsGuidePage stops={stopsGuide} setStops={setStopsGuide}/>;
       case 'fleet': return <FleetPage tours={tours} fuel={fuel} fines={fines} carTasks={carTasks} stopsCarBus={stopsCarBus} vehicles={vehicles} setVehicles={setVehicles}/>;
-      case 'carRental': return <CarRentalPage rentals={carRentals} setRentals={setCarRentals} vehicles={vehicles}/>;
+      case 'carRental': return <CarRentalPage rentals={carRentals} setRentals={setCarRentals} vehicles={vehicles} roundTrips={roundTrips} stopsCarBus={stopsCarBus}/>;
+      case 'roundTrips': return <RoundTripsPage roundTrips={roundTrips} setRoundTrips={setRoundTrips} vehicles={vehicles} guides={guides} tours={tours} carRentals={carRentals} stopsCarBus={stopsCarBus}/>;
       case 'fuel': return <FuelPage fuel={fuel} setFuel={setFuel}/>;
       case 'stopsCarBus': return <StopsCarPage stops={stopsCarBus} setStops={setStopsCarBus}/>;
-      case 'fines': return <FinesPage fines={fines} setFines={setFines}/>;
       case 'carTasks': return <CarTasksPage tasks={carTasks} setTasks={setCarTasks}/>;
-      case 'stopsGuide': return <StopsGuidePage stops={stopsGuide} setStops={setStopsGuide}/>;
-      default: return null;
+      case 'fines': return <FinesPage fines={fines} setFines={setFines}/>;
+      default: return <Dashboard tours={tours} guides={guides} fuel={fuel} carTasks={carTasks}/>;
     }
   };
-  return <>
+  React.useEffect(()=>{
+    const d={guides,fuel,stopsCarBus,fines,carTasks,stopsGuide,tours,vehicles,roundTrips};
+    try{localStorage.setItem('zelanosData',JSON.stringify(d))}catch(e){}
+  },[guides,fuel,stopsCarBus,fines,carTasks,stopsGuide,tours,vehicles,roundTrips]);
+  return(<div style={{display:'flex',minHeight:'100vh'}}>
     <div className="sidebar">
-      <h1>{'\u{1F30D}'} Zelanos Tours</h1>
-      {navItems.map((item,i)=>item.group?<div key={i} className="nav-group">{item.group}</div>:
-        <div key={item.id} className={`nav-item ${page===item.id?'active':''}`} onClick={()=>setPage(item.id)}>{item.icon} <span>{item.label}</span></div>
+      <h1><span>Zelanos Tours</span></h1>
+      {navItems.map((it,i)=>it.group?<div key={i} className="nav-group">{it.group}</div>:
+        <div key={it.id} onClick={()=>setPage(it.id)} className={'nav-item'+(page===it.id?' active':'')}>
+          <span className="icon">{it.icon}</span><span className="label">{it.label}</span>
+        </div>
       )}
     </div>
     <div className="main">{renderPage()}</div>
-  </>
+  </div>);
 }
-ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
-
+const root=ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App/>);
 </script>
 </body>
 </html>

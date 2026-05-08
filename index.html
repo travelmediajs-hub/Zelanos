@@ -67,6 +67,22 @@ tr:hover td{background:rgba(123,35,50,.04)}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
 .cal-header{padding:8px;text-align:center;font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase}
 .cal-day{min-height:100px;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:6px;font-size:12px;position:relative;overflow:hidden}
+.plan-grid{display:grid;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.plan-header{background:var(--accent);color:#fff;padding:8px 10px;font-size:12px;font-weight:700;text-align:center;border-right:1px solid rgba(255,255,255,.15);white-space:nowrap}
+.plan-row-header{background:var(--card2);padding:8px 10px;font-size:12px;font-weight:600;border-right:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plan-cell{min-height:52px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:3px;position:relative;display:flex;flex-direction:column;gap:2px}
+.plan-block{padding:3px 6px;border-radius:4px;font-size:10px;line-height:1.3;cursor:default;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plan-block.tour{background:rgba(123,35,50,.12);color:var(--accent);border-left:3px solid var(--accent)}
+.plan-block.rental{background:rgba(217,119,6,.12);color:var(--orange);border-left:3px solid var(--orange)}
+.plan-block.conflict{background:rgba(192,57,43,.15);color:var(--red);border-left:3px solid var(--red)}
+.plan-free{color:var(--green);font-size:10px;opacity:.5;text-align:center;padding:4px}
+.plan-week-nav{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.plan-week-nav button{padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--card);cursor:pointer;font-size:13px;color:var(--text)}
+.plan-week-nav button:hover{background:var(--card2)}
+.plan-week-nav .week-label{font-size:15px;font-weight:700;color:var(--accent)}
+.plan-legend{display:flex;gap:16px;margin-bottom:12px;flex-wrap:wrap}
+.plan-legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)}
+.plan-legend-dot{width:12px;height:12px;border-radius:3px}
 .cal-day.other-month{opacity:.3}
 .cal-day.today{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
 .cal-day .day-num{font-weight:700;color:var(--text2);margin-bottom:4px;font-size:13px}
@@ -322,7 +338,7 @@ function CalendarView({filtered,month,year,onEdit}){
 function ListView({filtered,onEdit,onDelete}){
   const sorted=useMemo(()=>[...filtered].sort((a,b)=>{const da=parseDate(a.date),db=parseDate(b.date);if(!da||!db)return 0;return da-db}),[filtered]);
   return <div className="scroll-table"><table><thead><tr>
-    <th></th><th>Доставчик</th><th>Booking #</th><th>Дата</th><th>Тур</th><th>Име</th><th>Въз.</th><th>Деца</th><th>Хотел</th><th>Час</th>
+    <th></th><th>Продавач</th><th>Booking #</th><th>Дата</th><th>Тур</th><th>Име</th><th>Въз.</th><th>Деца</th><th>Хотел</th><th>Час</th>
     <th>Цена към нас</th><th>Продажна цена</th><th>Гид</th><th>Шофьор</th><th>Кола</th>
     <th>Гид €</th><th>Шофьор €</th><th>Гориво €</th><th>Аудио €</th><th>Входни €</th><th>Обяд €</th><th>Паркинг €</th>
     <th>Общо разходи</th><th>Баланс €</th><th>Баланс лв</th><th>Резерв.</th><th>Мейл гид</th><th></th>
@@ -368,7 +384,7 @@ function ToursPage({tours,setTours,guides,catalog,vehicles}){
     const pax=filtered.reduce((a,t)=>a+(t.adults||0)+(t.children||0),0);
     return{rev,exp,profit:rev-exp,pax,count:filtered.length}
   },[filtered]);
-  const blank={month,year,monthName:MONTHS[month-1],payNote:'',supplier:'',bookingNumber:'',date:'',tour:'',name:'',adults:null,children:null,hotel:'',pickupTime:'',priceToUs:null,salePrice:null,guide:'',driver:'',carNumber:'',expGuide:null,expDriver:null,expFuel:null,expAudioGuide:null,expEntryFees:null,expLunch:null,expParking:null,totalExpenses:null,balanceEur:null,balanceBgn:null,reservationMade:'',emailSentToGuide:'',tourType:'guide_driver',tourStatus:'reservation'};
+  const blank={month,year,monthName:MONTHS[month-1],payNote:'',supplier:'',bookingNumber:'',date:'',tour:'',name:'',clientPhone:'',clientEmail:'',adults:null,children:null,hotel:'',pickupTime:'',priceToUs:null,salePrice:null,salePriceChild:null,guide:'',driver:'',carNumber:'',expGuide:null,expDriver:null,expFuel:null,expAudioGuide:null,expEntryFees:null,expLunch:null,expParking:null,totalExpenses:null,balanceEur:null,balanceBgn:null,reservationMade:'',emailSentToGuide:'',tourType:'guide_driver',tourStatus:'reservation',notes:''};
   const save=(form)=>{
     const exp=(form.expGuide||0)+(form.expDriver||0)+(form.expFuel||0)+(form.expAudioGuide||0)+(form.expEntryFees||0)+(form.expLunch||0)+(form.expParking||0);
     const bal=(form.priceToUs||0)-exp;const updated={...form,totalExpenses:exp,balanceEur:Math.round(bal*100)/100};
@@ -388,7 +404,15 @@ function ToursPage({tours,setTours,guides,catalog,vehicles}){
       <div className="stat-card"><div className="label">Разходи</div><div className="value red">{stats.exp.toFixed(2)} €</div></div>
       <div className="stat-card"><div className="label">Печалба</div><div className={`value ${stats.profit>=0?'green':'red'}`}>{stats.profit.toFixed(2)} €</div></div>
     </div>
-    <div className="topbar"><h2>{MONTHS[month-1]} {year}</h2><div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
+    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12,flexWrap:'wrap',gap:8}}>
+      <h2 style={{fontSize:22,fontWeight:700,color:'var(--accent)',margin:0}}>{MONTHS[month-1]} {year}</h2>
+      <div style={{display:'flex',gap:8,alignItems:'center'}}>
+        <input className="search-box" placeholder="Търси тур, клиент, гид..." value={search} onChange={e=>setSearch(e.target.value)}/>
+        <button className={`btn ${carFilter?'btn-primary':'btn-ghost'}`} onClick={()=>setCarFilter(!carFilter)} title="Покажи само турове без кола">{carFilter?'✓ ':''} Без кола</button>
+        <button className="btn btn-primary" onClick={()=>setEditing({...blank})}>+ Нов тур</button>
+      </div>
+    </div>
+    <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap',marginBottom:12}}>
       <div className="view-toggle">
         <button className={`view-btn ${view==='table'?'active':''}`} onClick={()=>setView('table')}>Таблица</button>
         <button className={`view-btn ${view==='list'?'active':''}`} onClick={()=>setView('list')}>Списък</button>
@@ -400,10 +424,7 @@ function ToursPage({tours,setTours,guides,catalog,vehicles}){
           return <button key={k} className={`view-btn ${statusFilter===k?'active':''}`} onClick={()=>setStatusFilter(k)}>{l} ({cnt})</button>
         })}
       </div>
-      <input className="search-box" placeholder="Търси тур, клиент, гид..." value={search} onChange={e=>setSearch(e.target.value)}/>
-      <button className={`btn ${carFilter?'btn-primary':'btn-ghost'}`} onClick={()=>setCarFilter(!carFilter)} title="Покажи само турове без кола">{carFilter?'✓ ':''} Без кола</button>
-      <button className="btn btn-primary" onClick={()=>setEditing({...blank})}>+ Нов тур</button>
-    </div></div>
+    </div>
     {carFilter&&filtered.length>0&&<div style={{display:'flex',gap:8,alignItems:'center',padding:'10px 16px',background:'var(--card)',borderRadius:8,border:'1px solid var(--border)',marginBottom:12}}>
       <span style={{fontSize:13,color:'var(--text2)'}}>Задай кола на избраните ({bulkSel.size}):</span>
       <select className="search-box" style={{width:'auto'}} value={bulkCar} onChange={e=>setBulkCar(e.target.value)}>
@@ -442,8 +463,9 @@ function ToursPage({tours,setTours,guides,catalog,vehicles}){
 function TourForm({data,onSave,onCancel,guides,catalog,vehicles,allTours}){
   const[f,setF]=useState(data);const u=(k,v)=>setF(p=>({...p,[k]:v}));
   const [formTab,setFormTab]=useState('tour');
-  const selectCatalogTour=(cid)=>{if(!cid){u('tour','');return};const ct=catalog.find(c=>c.id===+cid);if(ct){setF(p=>({...p,tour:ct.name,salePrice:ct.salePrice||p.salePrice}))}};
-  const catalogMatch=useMemo(()=>{if(!f.tour)return null;const base=f.tour.replace(/ - (English|Spanish|Italian|French|German|Portuguese|Russian)/,'');return catalog.find(c=>c.name===base)},[f.tour,catalog]);
+  const [catSearch,setCatSearch]=useState('');
+  const selectCatalogTour=(cid)=>{if(!cid){setF(p=>({...p,tour:'',catalogId:null}));return};const ct=catalog.find(c=>c.id===+cid);if(ct){setF(p=>({...p,tour:ct.name,catalogId:ct.id,salePrice:ct.salePrice||p.salePrice,salePriceChild:ct.childPrice||p.salePriceChild,tourType:ct.needsCar===false?'walking':p.tourType||'guide_driver'}))}};
+  const catalogMatch=useMemo(()=>{if(f.catalogId)return catalog.find(c=>c.id===f.catalogId);if(!f.tour)return null;const base=f.tour.replace(/ - (English|Spanish|Italian|French|German|Portuguese|Russian)/,'');return catalog.find(c=>c.name===base)},[f.tour,f.catalogId,catalog]);
   const tp=f.tourType||'guide_driver';
   const st=f.tourStatus||'reservation';
   const needsCar=tp==='guide_drives'||tp==='guide_driver';
@@ -472,23 +494,27 @@ function TourForm({data,onSave,onCancel,guides,catalog,vehicles,allTours}){
   const remainingSeats=vSeats?vSeats.pax-totalPaxInCar:null;
   const missingReport=missing.filter(k=>['expGuide','expDriver','expFuel'].includes(k));
   const missingTour=missing.filter(k=>['guide','driver','carNumber'].includes(k));
+  const isWalking=tp==='walking';
+  const typedCatalog=useMemo(()=>{const s=catSearch.toLowerCase();let list=catalog||[];list=list.filter(c=>isWalking?c.needsCar===false:c.needsCar!==false);if(s)list=list.filter(c=>c.name.toLowerCase().includes(s));return list},[catalog,catSearch,isWalking]);
+  const [catOpen,setCatOpen]=useState(false);
   return <div>
   <div style={{display:'flex',gap:12,marginBottom:16,alignItems:'center'}}>
     <div style={{flex:1}}>
       <div className="view-toggle" style={{width:'100%'}}>
-        <button type="button" className={`view-btn ${tp==='walking'?'active':''}`} onClick={()=>u('tourType','walking')}>🚶 Пешеходен</button>
-        <button type="button" className={`view-btn ${tp==='guide_drives'?'active':''}`} onClick={()=>u('tourType','guide_drives')}>🚗 Гид-шофьор</button>
-        <button type="button" className={`view-btn ${tp==='guide_driver'?'active':''}`} onClick={()=>u('tourType','guide_driver')}>🚐 Гид + Шофьор</button>
+        <button type="button" className={`view-btn ${isWalking?'active':''}`} onClick={()=>{u('tourType','walking');setF(p=>({...p,tourType:'walking',catalogId:null,tour:''}));setCatSearch('')}}>🚶 Пешеходен</button>
+        <button type="button" className={`view-btn ${!isWalking?'active':''}`} onClick={()=>{u('tourType','guide_driver');setF(p=>({...p,tourType:'guide_driver',catalogId:null,tour:''}));setCatSearch('')}}>🚐 С автомобил</button>
       </div>
     </div>
     <div>
-      <span className={
-        st==='reported'?'badge badge-green':
-        st==='done'?'badge badge-yellow':
-        st==='cancelled'?'badge badge-red':'badge badge-blue'
-      } style={{fontSize:13,padding:'4px 12px'}}>
-        {({reservation:'📋 Резервация',done:'✅ Проведен',reported:'📊 Отчетен',cancelled:'❌ Отменен'})[st]||st}
-      </span>
+      <select value={st} onChange={e=>u('tourStatus',e.target.value)} style={{padding:'6px 12px',borderRadius:6,fontSize:13,fontWeight:600,border:'1px solid var(--border)',cursor:'pointer',
+        background:st==='planned'?'rgba(45,138,78,.12)':st==='reported'?'rgba(45,138,78,.12)':st==='done'?'rgba(212,160,23,.12)':st==='cancelled'?'rgba(192,57,43,.12)':'rgba(123,35,50,.1)',
+        color:st==='planned'?'var(--green)':st==='reported'?'var(--green)':st==='done'?'var(--yellow)':st==='cancelled'?'var(--red)':'var(--accent)'}}>
+        <option value="reservation">{'📋'} Резервация</option>
+        <option value="planned">{'📌'} Планиран</option>
+        <option value="done">{'✅'} Проведен</option>
+        <option value="reported">{'📊'} Отчетен</option>
+        <option value="cancelled">{'❌'} Отменен</option>
+      </select>
     </div>
   </div>
   <div style={{display:'flex',gap:0,marginBottom:20,borderBottom:'2px solid var(--border)'}}>
@@ -505,32 +531,44 @@ function TourForm({data,onSave,onCancel,guides,catalog,vehicles,allTours}){
   </div>
 
   {formTab==='tour'&&<div>
-    {catalog&&catalog.length>0&&<div style={{marginBottom:12,padding:12,background:'var(--card2)',borderRadius:8,border:'1px solid var(--border)'}}>
-      <label style={{fontSize:12,color:'var(--text2)',fontWeight:600,display:'block',marginBottom:4}}>Избери от каталога</label>
-      <div style={{display:'flex',gap:8,alignItems:'center'}}>
-        <select style={{flex:1,padding:'8px 10px',borderRadius:6,border:'1px solid var(--border)',background:'var(--card)',color:'var(--text)',fontSize:13}} value={catalogMatch?catalogMatch.id:''} onChange={e=>selectCatalogTour(e.target.value)}>
-          <option value="">— свободен текст —</option>
-          {catalog.map(c=><option key={c.id} value={c.id}>{c.name}{c.languages&&c.languages.length?' ('+c.languages.join(', ')+')':''}</option>)}
-        </select>
-        {catalogMatch&&catalogMatch.languages&&catalogMatch.languages.length>0&&<select style={{padding:'8px 10px',borderRadius:6,border:'1px solid var(--border)',background:'var(--card)',color:'var(--text)',fontSize:13}} value={''} onChange={e=>{if(e.target.value)u('tour',catalogMatch.name+' - '+e.target.value)}}>
-          <option value="">+ Език</option>
-          {catalogMatch.languages.map(l=><option key={l} value={l}>{l}</option>)}
-        </select>}
+    {catalog&&catalog.length>0&&<div style={{marginBottom:12,position:'relative'}}>
+      <label style={{fontSize:12,color:'var(--text2)',fontWeight:600,display:'block',marginBottom:4}}>Тур от каталога</label>
+      <div style={{position:'relative'}}>
+        <input placeholder="Търси и избери тур..." value={catOpen?catSearch:(catalogMatch?catalogMatch.name+(f.tour&&f.tour.includes(' - ')?' - '+f.tour.split(' - ').pop():''):(catSearch||''))} onChange={e=>{setCatSearch(e.target.value);setCatOpen(true)}} onFocus={()=>setCatOpen(true)} onBlur={()=>setTimeout(()=>setCatOpen(false),200)} style={{width:'100%',padding:'8px 10px',paddingRight:30,borderRadius:6,border:'1px solid '+(catalogMatch?'var(--green)':'var(--border)'),background:'var(--card)',color:'var(--text)',fontSize:13}}/>
+        {catalogMatch&&<span style={{position:'absolute',right:8,top:'50%',transform:'translateY(-50%)',cursor:'pointer',fontSize:16,color:'var(--text2)'}} onClick={()=>{selectCatalogTour('');setCatSearch('');setCatOpen(true)}}>✕</span>}
+      </div>
+      {catOpen&&<div style={{position:'absolute',zIndex:50,left:0,right:0,top:'100%',maxHeight:200,overflowY:'auto',border:'1px solid var(--border)',borderRadius:6,background:'var(--card)',boxShadow:'0 4px 12px rgba(0,0,0,.15)'}}>
+        {typedCatalog.map(c=><div key={c.id} style={{padding:'8px 12px',cursor:'pointer',fontSize:13,borderBottom:'1px solid var(--border)',background:catalogMatch&&catalogMatch.id===c.id?'rgba(123,35,50,.08)':'transparent',display:'flex',justifyContent:'space-between',alignItems:'center'}} onClick={()=>{selectCatalogTour(c.id);setCatSearch('');setCatOpen(false)}} onMouseEnter={e=>e.currentTarget.style.background='rgba(123,35,50,.05)'} onMouseLeave={e=>e.currentTarget.style.background=catalogMatch&&catalogMatch.id===c.id?'rgba(123,35,50,.08)':'transparent'}>
+          <span>{c.name}</span>
+          <span style={{fontSize:11,color:'var(--text2)'}}>{c.salePrice?c.salePrice+'€':''}{c.childPrice?' / '+c.childPrice+'€':''}</span>
+        </div>)}
+        {typedCatalog.length===0&&<div style={{padding:'10px',fontSize:13,color:'var(--text2)',textAlign:'center'}}>Няма {isWalking?'пешеходни':'автомобилни'} турове</div>}
+      </div>}
+    </div>}
+    {catalogMatch&&<div style={{marginBottom:12}}>
+      <label style={{fontSize:12,color:'var(--text2)',fontWeight:600,display:'block',marginBottom:4}}>Език</label>
+      <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+        {['English','Spanish','Italian','French','German','Portuguese','Russian','Bulgarian'].map(l=>{
+          const currentLang=f.tour&&f.tour.includes(' - ')?f.tour.split(' - ').pop():'';
+          return <button key={l} type="button" className={`btn btn-sm ${currentLang===l?'btn-primary':'btn-ghost'}`} onClick={()=>u('tour',catalogMatch.name+' - '+l)}>{l}</button>
+        })}
       </div>
     </div>}
     <div className="form-grid">
-      <div className="form-group full"><label>Тур</label><input value={f.tour} onChange={e=>u('tour',e.target.value)}/></div>
-      <div className="form-group"><label>Дата</label><input value={f.date} onChange={e=>u('date',e.target.value)}/></div>
-      <div className="form-group"><label>Доставчик</label><input value={f.supplier} onChange={e=>u('supplier',e.target.value)}/></div>
+      <div className="form-group"><label>Дата</label><input type="date" value={f.date&&f.date.includes('.')?f.date.split('.').reverse().join('-'):f.date||''} onChange={e=>{const v=e.target.value;if(v){const p=v.split('-');u('date',p[2]+'.'+p[1]+'.'+p[0])}else{u('date','')}}}/></div>
+      <div className="form-group"><label>Час на взимане</label><input value={f.pickupTime} onChange={e=>u('pickupTime',e.target.value)}/></div>
+      <div className="form-group"><label>Продавач</label><input value={f.supplier} onChange={e=>u('supplier',e.target.value)}/></div>
       <div className="form-group"><label>Booking #</label><input value={f.bookingNumber} onChange={e=>u('bookingNumber',e.target.value)}/></div>
-      <div className="form-group"><label>Бележка плащане</label><input value={f.payNote} onChange={e=>u('payNote',e.target.value)}/></div>
-      <div className="form-group full"><label>Име клиент</label><input value={f.name} onChange={e=>u('name',e.target.value)}/></div>
+      <div className="form-group"><label>Име клиент</label><input value={f.name} onChange={e=>u('name',e.target.value)}/></div>
+      <div className="form-group"><label>Телефон</label><input type="tel" value={f.clientPhone||''} onChange={e=>u('clientPhone',e.target.value)}/></div>
+      <div className="form-group full"><label>Мейл</label><input type="email" value={f.clientEmail||''} onChange={e=>u('clientEmail',e.target.value)}/></div>
       <div className="form-group"><label>Възрастни</label><input type="number" value={f.adults||''} onChange={e=>u('adults',+e.target.value||null)}/></div>
       <div className="form-group"><label>Деца</label><input type="number" value={f.children||''} onChange={e=>u('children',+e.target.value||null)}/></div>
       <div className="form-group full"><label>Хотел</label><input value={f.hotel} onChange={e=>u('hotel',e.target.value)}/></div>
-      <div className="form-group"><label>Час на взимане</label><input value={f.pickupTime} onChange={e=>u('pickupTime',e.target.value)}/></div>
       <div className="form-group"><label>Цена към нас € {!f.priceToUs&&<span style={{color:'var(--red)'}}>*</span>}</label><input type="number" step="0.01" value={f.priceToUs||''} onChange={e=>u('priceToUs',+e.target.value||null)} style={{borderColor:!f.priceToUs?'var(--red)':''}}/></div>
-      <div className="form-group"><label>Продажна цена €</label><input type="number" step="0.01" value={f.salePrice||''} onChange={e=>u('salePrice',+e.target.value||null)}/></div>
+      <div className="form-group"><label>Бележка плащане</label><input value={f.payNote} onChange={e=>u('payNote',e.target.value)}/></div>
+      <div className="form-group"><label>Продажна цена възрастен €</label><input type="number" step="0.01" value={f.salePrice||''} onChange={e=>u('salePrice',+e.target.value||null)}/></div>
+      <div className="form-group"><label>Продажна цена дете €</label><input type="number" step="0.01" value={f.salePriceChild||''} onChange={e=>u('salePriceChild',+e.target.value||null)}/></div>
     </div>
     <h4 style={{margin:'20px 0 10px',color:'var(--text2)',fontSize:13,borderTop:'1px solid var(--border)',paddingTop:16}}>ЕКИП И ТРАНСПОРТ</h4>
     <div className="form-grid">
@@ -586,6 +624,10 @@ function TourForm({data,onSave,onCancel,guides,catalog,vehicles,allTours}){
       ✓ Всички задължителни полета са попълнени — турът е готов за отчитане
     </div>}
   </div>}
+
+  <div style={{marginTop:16}}>
+    <div className="form-group full"><label>Бележки</label><textarea rows={2} value={f.notes||''} onChange={e=>u('notes',e.target.value)} style={{width:'100%',padding:'8px 10px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg)',color:'var(--text)',fontSize:13,resize:'vertical'}}/></div>
+  </div>
 
   <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:20,paddingTop:16,borderTop:'1px solid var(--border)'}}>
     <div>
@@ -703,9 +745,8 @@ function buildInitialCatalog(tours){
   const map={};let cid=1;
   tours.forEach(t=>{if(!t.tour)return;let name=t.tour,lang='';
     for(const l of['English','Spanish','Italian','French','German','Portuguese','Russian']){if(name.includes(' - '+l)){lang=l;name=name.replace(' - '+l,'');break}}
-    if(!map[name])map[name]={id:cid++,name,languages:[],suppliers:[],salePrice:null,duration:'',needsCar:true,description:''};
+    if(!map[name])map[name]={id:cid++,name,languages:[],salePrice:null,childPrice:null,duration:'',needsCar:true,description:''};
     if(lang&&!map[name].languages.includes(lang))map[name].languages.push(lang);
-    if(t.supplier&&!map[name].suppliers.includes(t.supplier))map[name].suppliers.push(t.supplier);
     if(t.salePrice&&!map[name].salePrice)map[name].salePrice=t.salePrice;
     if(name.includes('WALKING'))map[name].needsCar=false;
   });return Object.values(map);
@@ -714,10 +755,9 @@ function buildInitialCatalog(tours){
 function CatalogPage({catalog,setCatalog}){
   const [search,setSearch]=useState('');const [editing,setEditing]=useState(null);const [delId,setDelId]=useState(null);
   const filtered=useMemo(()=>{const s=search.toLowerCase();return !s?catalog:catalog.filter(c=>c.name.toLowerCase().includes(s)||c.languages.join(',').toLowerCase().includes(s))},[catalog,search]);
-  const blank={name:'',languages:[],suppliers:[],salePrice:null,duration:'',needsCar:true,description:''};
+  const blank={name:'',languages:[],salePrice:null,childPrice:null,duration:'',needsCar:true,description:''};
   const save=(form)=>{
     if(typeof form.languages==='string')form.languages=form.languages.split(',').map(s=>s.trim()).filter(Boolean);
-    if(typeof form.suppliers==='string')form.suppliers=form.suppliers.split(',').map(s=>s.trim()).filter(Boolean);
     if(form.id){setCatalog(p=>p.map(c=>c.id===form.id?form:c))}else{setCatalog(p=>[...p,{...form,id:genId(p)}])};setEditing(null)};
   const del=()=>{setCatalog(p=>p.filter(c=>c.id!==delId));setDelId(null)};
   return <div>
@@ -725,21 +765,21 @@ function CatalogPage({catalog,setCatalog}){
       <input className="search-box" placeholder="Търси..." value={search} onChange={e=>setSearch(e.target.value)}/>
       <button className="btn btn-primary" onClick={()=>setEditing({...blank})}>+ Нов тур</button>
     </div></div>
-    <div className="scroll-table"><table><thead><tr><th>Име на тур</th><th>Езици</th><th>Доставчици</th><th>Продажна цена €</th><th>Продължителност</th><th>Кола</th><th>Описание</th><th></th></tr></thead>
+    <div className="scroll-table"><table><thead><tr><th>Име на тур</th><th>Езици</th><th>Продажна цена €</th><th>Цена дете €</th><th>Продължителност</th><th>Кола</th><th>Описание</th><th></th></tr></thead>
     <tbody>{filtered.map(c=><tr key={c.id}><td><strong>{c.name}</strong></td>
       <td>{(c.languages||[]).map(l=><span key={l} className="badge badge-blue" style={{marginRight:3}}>{l}</span>)}</td>
-      <td style={{fontSize:12}}>{(c.suppliers||[]).join(', ')}</td><td>{c.salePrice}</td><td>{c.duration}</td>
+      <td>{c.salePrice}</td><td>{c.childPrice}</td><td>{c.duration}</td>
       <td>{c.needsCar?<span className="badge badge-green">да</span>:<span className="badge badge-yellow">не</span>}</td>
       <td title={c.description} style={{maxWidth:200}}>{c.description}</td>
-      <td style={{whiteSpace:'nowrap'}}><button className="btn btn-ghost btn-sm" onClick={()=>setEditing({...c,languages:(c.languages||[]).join(', '),suppliers:(c.suppliers||[]).join(', ')})}>✎</button>{' '}
+      <td style={{whiteSpace:'nowrap'}}><button className="btn btn-ghost btn-sm" onClick={()=>setEditing({...c,languages:(c.languages||[]).join(', ')})}>✎</button>{' '}
         <button className="btn btn-danger btn-sm" onClick={()=>setDelId(c.id)}>✕</button></td>
     </tr>)}</tbody></table></div>
     {editing&&<Modal title={editing.id?"Редактирай":"Нов тур в каталога"} onClose={()=>setEditing(null)}>
       <div><div className="form-grid">
         <div className="form-group full"><label>Име на тур</label><input value={editing.name} onChange={e=>setEditing(p=>({...p,name:e.target.value}))}/></div>
         <div className="form-group"><label>Езици (разделени с ,)</label><input value={editing.languages} onChange={e=>setEditing(p=>({...p,languages:e.target.value}))}/></div>
-        <div className="form-group"><label>Доставчици (разделени с ,)</label><input value={editing.suppliers} onChange={e=>setEditing(p=>({...p,suppliers:e.target.value}))}/></div>
         <div className="form-group"><label>Продажна цена €</label><input type="number" step="0.01" value={editing.salePrice||''} onChange={e=>setEditing(p=>({...p,salePrice:+e.target.value||null}))}/></div>
+        <div className="form-group"><label>Цена дете €</label><input type="number" step="0.01" value={editing.childPrice||''} onChange={e=>setEditing(p=>({...p,childPrice:+e.target.value||null}))}/></div>
         <div className="form-group"><label>Продължителност</label><input placeholder="Цял ден, Полудневен, Вечерен" value={editing.duration||''} onChange={e=>setEditing(p=>({...p,duration:e.target.value}))}/></div>
         <div className="form-group"><label>Нужна кола</label><select value={editing.needsCar?'да':'не'} onChange={e=>setEditing(p=>({...p,needsCar:e.target.value==='да'}))}><option>да</option><option>не</option></select></div>
         <div className="form-group full"><label>Описание</label><textarea rows={3} value={editing.description||''} onChange={e=>setEditing(p=>({...p,description:e.target.value}))}/></div>
@@ -922,7 +962,7 @@ function GuideDossierPage({tours,guides,stopsGuide}){
               </div>})()}
           </div>
           <div style={{background:'var(--card)',borderRadius:8,padding:16,border:'1px solid var(--border)'}}>
-            <h3 style={{fontSize:14,marginBottom:12}}>Доставчици</h3>
+            <h3 style={{fontSize:14,marginBottom:12}}>Продавачи</h3>
             {topSuppliers.map(([name,count],i)=><div key={i} style={{display:'flex',justifyContent:'space-between',padding:'3px 0',fontSize:13}}><span>{name}</span><strong>{count}</strong></div>)}
             {topSuppliers.length===0&&<p style={{color:'var(--text2)',fontSize:13}}>Няма данни</p>}
             {g.profile&&<div style={{marginTop:16,padding:12,background:'var(--bg)',borderRadius:6,border:'1px solid var(--border)'}}>
@@ -940,7 +980,7 @@ function GuideDossierPage({tours,guides,stopsGuide}){
       </>}
 
       {tab==='tours'&&<div>
-        <div className="scroll-table"><table><thead><tr><th>Дата</th><th>Тур</th><th>Доставчик</th><th>Кола</th><th>Шофьор</th><th>Пакс</th><th>Приход €</th><th>Хонорар €</th><th>Общо разх. €</th><th>Баланс €</th></tr></thead>
+        <div className="scroll-table"><table><thead><tr><th>Дата</th><th>Тур</th><th>Продавач</th><th>Кола</th><th>Шофьор</th><th>Пакс</th><th>Приход €</th><th>Хонорар €</th><th>Общо разх. €</th><th>Баланс €</th></tr></thead>
         <tbody>{g.tours.sort((a,b)=>{const da=parseDate(a.date),db=parseDate(b.date);return da&&db?db-da:0}).map((t,i)=><tr key={i}>
           <td style={{whiteSpace:'nowrap'}}>{t.date}</td>
           <td style={{maxWidth:200,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}} title={t.tour}>{t.tour}</td>
@@ -1224,7 +1264,7 @@ function FleetPage({tours,fuel,fines,carTasks,stopsCarBus,vehicles,setVehicles})
       </div>}
 
       {tab==='tours'&&<div>
-        <div className="scroll-table"><table><thead><tr><th>Дата</th><th>Тур</th><th>Доставчик</th><th>Гид</th><th>Шофьор</th><th>Пакс</th><th>Приход €</th><th>Разход €</th><th>Баланс €</th></tr></thead>
+        <div className="scroll-table"><table><thead><tr><th>Дата</th><th>Тур</th><th>Продавач</th><th>Гид</th><th>Шофьор</th><th>Пакс</th><th>Приход €</th><th>Разход €</th><th>Баланс €</th></tr></thead>
         <tbody>{c.tours.sort((a,b)=>{const da=parseDate(a.date),db=parseDate(b.date);return da&&db?db-da:0}).map((t,i)=><tr key={i}>
           <td style={{whiteSpace:'nowrap'}}>{t.date}</td>
           <td style={{maxWidth:200,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}} title={t.tour}>{t.tour}</td>
@@ -1301,6 +1341,376 @@ function FleetPage({tours,fuel,fines,carTasks,stopsCarBus,vehicles,setVehicles})
 }
 
 
+// ============= CAR RENTAL =============
+function CarRentalPage({rentals,setRentals,vehicles}){
+  const [search,setSearch]=useState('');const [editing,setEditing]=useState(null);const [delId,setDelId]=useState(null);
+  const calcDays=(from,to)=>{if(!from||!to)return 0;const a=new Date(from.split('.').reverse().join('-')),b=new Date(to.split('.').reverse().join('-'));const diff=Math.round((b-a)/(1000*60*60*24));return diff>0?diff:0};
+  const filtered=useMemo(()=>{const s=search.toLowerCase();return !s?rentals:rentals.filter(r=>(r.client||'').toLowerCase().includes(s)||(r.vehicle||'').toLowerCase().includes(s)||(r.dateFrom||'').includes(s))},[rentals,search]);
+  const totalRev=filtered.reduce((a,r)=>a+(r.totalPrice||0),0);
+  const blank={dateFrom:'',dateTo:'',client:'',clientPhone:'',clientEmail:'',vehicle:'',pricePerDay:null,days:0,totalPrice:null,notes:''};
+  const save=(form)=>{
+    const days=calcDays(form.dateFrom,form.dateTo);
+    const total=days*(form.pricePerDay||0);
+    const updated={...form,days,totalPrice:Math.round(total*100)/100};
+    if(form.id){setRentals(p=>p.map(r=>r.id===form.id?updated:r))}else{setRentals(p=>[...p,{...updated,id:genId(p)}])};setEditing(null)
+  };
+  const del=()=>{setRentals(p=>p.filter(r=>r.id!==delId));setDelId(null)};
+  const vList=(vehicles||[]).filter(v=>v.active);
+  return <div>
+    <div className="topbar"><h2>Наем автомобил ({filtered.length})</h2><div style={{display:'flex',gap:8}}>
+      <input className="search-box" placeholder="Търси клиент, кола..." value={search} onChange={e=>setSearch(e.target.value)}/>
+      <button className="btn btn-primary" onClick={()=>setEditing({...blank})}>+ Нов наем</button>
+    </div></div>
+    <div className="stats-row">
+      <div className="stat-card"><div className="label">Наеми</div><div className="value blue">{filtered.length}</div></div>
+      <div className="stat-card"><div className="label">Общо приход</div><div className="value green">{totalRev.toFixed(2)} €</div></div>
+    </div>
+    <div className="scroll-table"><table><thead><tr><th>Кола</th><th>Клиент</th><th>Телефон</th><th>От</th><th>До</th><th>Дни</th><th>€/ден</th><th>Общо €</th><th>Бележки</th><th></th></tr></thead>
+    <tbody>{filtered.map(r=><tr key={r.id}>
+      <td>{r.vehicle}</td><td><strong>{r.client}</strong></td><td>{r.clientPhone}</td>
+      <td style={{whiteSpace:'nowrap'}}>{r.dateFrom}</td><td style={{whiteSpace:'nowrap'}}>{r.dateTo}</td>
+      <td><strong>{r.days}</strong></td><td>{r.pricePerDay}</td>
+      <td style={{fontWeight:700,color:'var(--green)'}}>{r.totalPrice}</td>
+      <td title={r.notes} style={{maxWidth:150}}>{r.notes}</td>
+      <td style={{whiteSpace:'nowrap'}}><button className="btn btn-ghost btn-sm" onClick={()=>setEditing({...r})}>✎</button>{' '}
+        <button className="btn btn-danger btn-sm" onClick={()=>setDelId(r.id)}>✕</button></td>
+    </tr>)}</tbody></table></div>
+    {editing&&<Modal title={editing.id?"Редактирай наем":"Нов наем"} onClose={()=>setEditing(null)}>
+      <CarRentalForm data={editing} onSave={save} onCancel={()=>setEditing(null)} vehicles={vList}/>
+    </Modal>}
+    {delId&&<ConfirmModal msg="Изтрий наем?" onConfirm={del} onCancel={()=>setDelId(null)}/>}
+  </div>
+}
+
+function CarRentalForm({data,onSave,onCancel,vehicles}){
+  const [f,setF]=useState(data);const u=(k,v)=>setF(p=>({...p,[k]:v}));
+  const toISO=(d)=>d&&d.includes('.')?d.split('.').reverse().join('-'):(d||'');
+  const fromISO=(v)=>{if(!v)return '';const p=v.split('-');return p[2]+'.'+p[1]+'.'+p[0]};
+  const calcDays=(from,to)=>{if(!from||!to)return 0;const a=new Date(from.split('.').reverse().join('-')),b=new Date(to.split('.').reverse().join('-'));const diff=Math.round((b-a)/(1000*60*60*24));return diff>0?diff:0};
+  const days=calcDays(f.dateFrom,f.dateTo);
+  const total=days*(f.pricePerDay||0);
+  return <div>
+    <div className="form-grid">
+      <div className="form-group full"><label>Автомобил</label><select value={f.vehicle||''} onChange={e=>u('vehicle',e.target.value)} style={{width:'100%'}}>
+        <option value="">— избери кола —</option>{vehicles.map(v=><option key={v.id} value={v.name}>{v.name}{v.seats?' ('+v.seats+')':''}</option>)}
+      </select></div>
+      <div className="form-group"><label>От дата</label><input type="date" value={toISO(f.dateFrom)} onChange={e=>u('dateFrom',fromISO(e.target.value))}/></div>
+      <div className="form-group"><label>До дата</label><input type="date" value={toISO(f.dateTo)} onChange={e=>u('dateTo',fromISO(e.target.value))}/></div>
+      <div className="form-group"><label>Клиент</label><input value={f.client||''} onChange={e=>u('client',e.target.value)}/></div>
+      <div className="form-group"><label>Телефон</label><input type="tel" value={f.clientPhone||''} onChange={e=>u('clientPhone',e.target.value)}/></div>
+      <div className="form-group full"><label>Мейл</label><input type="email" value={f.clientEmail||''} onChange={e=>u('clientEmail',e.target.value)}/></div>
+      <div className="form-group"><label>Цена на ден €</label><input type="number" step="0.01" value={f.pricePerDay||''} onChange={e=>u('pricePerDay',+e.target.value||null)}/></div>
+      <div className="form-group"><label>Брой дни</label><div style={{padding:'8px 10px',borderRadius:6,border:'1px solid var(--border)',background:'var(--card2)',fontSize:14,fontWeight:700,color:'var(--accent)'}}>{days}</div></div>
+    </div>
+    <div style={{margin:'16px 0',padding:14,background:'var(--card2)',borderRadius:8,border:'1px solid var(--border)',textAlign:'center'}}>
+      <div style={{fontSize:12,color:'var(--text2)',marginBottom:4}}>Обща сума</div>
+      <div style={{fontSize:26,fontWeight:700,color:'var(--green)'}}>{total.toFixed(2)} €</div>
+      <div style={{fontSize:12,color:'var(--text2)'}}>{days} дни × {f.pricePerDay||0} €/ден</div>
+    </div>
+    <div className="form-group full"><label>Бележки</label><textarea rows={2} value={f.notes||''} onChange={e=>u('notes',e.target.value)} style={{width:'100%',padding:'8px 10px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg)',color:'var(--text)',fontSize:13}}/></div>
+    <div className="form-actions" style={{marginTop:16}}><button className="btn btn-ghost" onClick={onCancel}>Отказ</button><button className="btn btn-primary" onClick={()=>onSave(f)}>Запази</button></div>
+  </div>
+}
+
+
+// ============= PLANNING MODULE =============
+function PlanningPage({tours,setTours,carRentals,vehicles,guides}){
+  const now=new Date();
+  const [viewMonth,setViewMonth]=useState(now.getMonth());
+  const [viewYear,setViewYear]=useState(now.getFullYear());
+  const [selectedDate,setSelectedDate]=useState(null);
+  // Check if tour is fully planned: walking=guide only, car=car+guide+driver
+  const isPlanned=(t)=>{
+    const isWalking=t.tourType==='guide_only'||t.tourType==='walking';
+    if(isWalking)return !!t.guide;
+    return !!t.carNumber&&!!t.guide&&!!t.driver;
+  };
+  const autoStatus=(tour,updates)=>{
+    const merged={...tour,...updates};
+    const planned=isPlanned(merged);
+    if(planned&&(!merged.tourStatus||merged.tourStatus==='reservation'))return{...updates,tourStatus:'planned'};
+    if(!planned&&merged.tourStatus==='planned')return{...updates,tourStatus:'reservation'};
+    return updates;
+  };
+  const assignCar=(tourId,carName)=>{setTours(prev=>prev.map(t=>{if(t.id!==tourId)return t;const u=autoStatus(t,{carNumber:carName});return{...t,...u}}));setPopover(null)};
+  const assignGuide=(tourId,guideName)=>{setTours(prev=>prev.map(t=>{if(t.id!==tourId)return t;const u=autoStatus(t,{guide:guideName});return{...t,...u}}));setPopover(null)};
+  const assignDriver=(tourId,driverName)=>{setTours(prev=>prev.map(t=>{if(t.id!==tourId)return t;const u=autoStatus(t,{driver:driverName});return{...t,...u}}));setPopover(null)};
+  const [popover,setPopover]=useState(null); // {tourId,field:'car'|'guide'|'driver'}
+  const popRef=React.useRef(null);
+  const [driverInput,setDriverInput]=useState('');
+  React.useEffect(()=>{if(!popover)return;const h=e=>{if(popRef.current&&!popRef.current.contains(e.target))setPopover(null)};document.addEventListener('mousedown',h);return()=>document.removeEventListener('mousedown',h)},[popover]);
+  React.useEffect(()=>{if(popover&&popover.field==='driver'){const t=tours.find(x=>x.id===popover.tourId);setDriverInput(t&&t.driver||'')}}, [popover]);
+  const MNAMES=['Януари','Февруари','Март','Април','Май','Юни','Юли','Август','Септември','Октомври','Ноември','Декември'];
+  const DNAMES=['Пон','Вто','Сря','Чет','Пет','Съб','Нед'];
+
+  const parseDate=(ds)=>{if(!ds)return null;if(ds.includes('.')){const p=ds.split('.');return new Date(+p[2],+p[1]-1,+p[0])}return new Date(ds)};
+  const sameDay=(a,b)=>a&&b&&a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();
+  const inRange=(day,from,to)=>{if(!from||!to||!day)return false;return day.getTime()>=from.getTime()&&day.getTime()<=to.getTime()};
+  const fmtD=(d)=>String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear();
+  const isToday=(d)=>sameDay(d,now);
+  const activeVehicles=(vehicles||[]).filter(v=>v.active);
+  const activeGuides=(guides||[]).filter(g=>g.name);
+
+  // Build calendar grid cells for the month
+  const calendarDays=useMemo(()=>{
+    const first=new Date(viewYear,viewMonth,1);
+    let startDay=first.getDay()-1;if(startDay<0)startDay=6; // Monday=0
+    const daysInMonth=new Date(viewYear,viewMonth+1,0).getDate();
+    const cells=[];
+    // Previous month padding
+    for(let i=0;i<startDay;i++){const d=new Date(viewYear,viewMonth,-(startDay-1-i));cells.push({date:d,inMonth:false})}
+    // Current month
+    for(let i=1;i<=daysInMonth;i++){cells.push({date:new Date(viewYear,viewMonth,i),inMonth:true})}
+    // Next month padding to fill 6 rows
+    while(cells.length<42){const d=new Date(viewYear,viewMonth+1,cells.length-startDay-daysInMonth+1);cells.push({date:d,inMonth:false})}
+    return cells;
+  },[viewMonth,viewYear]);
+
+  // Index tours and rentals by date string for quick lookup
+  const toursByDate=useMemo(()=>{
+    const map={};
+    tours.forEach(t=>{
+      if(!t.date)return;const d=parseDate(t.date);if(!d)return;
+      const k=d.toDateString();if(!map[k])map[k]=[];map[k].push(t);
+    });
+    return map;
+  },[tours]);
+
+  const rentalsByDate=useMemo(()=>{
+    const map={};
+    (carRentals||[]).forEach(r=>{
+      if(!r.dateFrom)return;
+      const from=parseDate(r.dateFrom),to=parseDate(r.dateTo||r.dateFrom);
+      if(!from)return;
+      // Expand each rental day
+      const cur=new Date(from);const end=to||from;
+      while(cur<=end){const k=cur.toDateString();if(!map[k])map[k]=[];map[k].push(r);cur.setDate(cur.getDate()+1)}
+    });
+    return map;
+  },[carRentals]);
+
+  const getDayData=(date)=>{
+    const k=date.toDateString();
+    const dayTours=toursByDate[k]||[];
+    const dayRentals=rentalsByDate[k]||[];
+    const noCar=dayTours.filter(t=>!t.carNumber);
+    const noGuide=dayTours.filter(t=>!t.guide);
+    // Busy vehicles
+    const busyCars=new Set();
+    dayTours.forEach(t=>{if(t.carNumber)busyCars.add(t.carNumber)});
+    dayRentals.forEach(r=>{if(r.vehicle)busyCars.add(r.vehicle)});
+    const freeCars=activeVehicles.filter(v=>!busyCars.has(v.name));
+    // Busy guides
+    const busyGuides=new Set();
+    dayTours.forEach(t=>{if(t.guide)busyGuides.add(t.guide)});
+    const freeGuides=activeGuides.filter(g=>!busyGuides.has(g.name));
+    // Conflicts: vehicles used more than once
+    const carUsage={};
+    dayTours.forEach(t=>{if(t.carNumber){carUsage[t.carNumber]=(carUsage[t.carNumber]||0)+1}});
+    dayRentals.forEach(r=>{if(r.vehicle){carUsage[r.vehicle]=(carUsage[r.vehicle]||0)+1}});
+    const conflicts=Object.entries(carUsage).filter(([,c])=>c>1).map(([name])=>name);
+    const planned=dayTours.filter(t=>isPlanned(t));
+    const unplanned=dayTours.filter(t=>!isPlanned(t));
+    // Free drivers (from guides who drive)
+    const busyDrivers=new Set();
+    dayTours.forEach(t=>{if(t.driver)busyDrivers.add(t.driver)});
+    return{dayTours,dayRentals,noCar,noGuide,freeCars,freeGuides,conflicts,planned,unplanned,busyDrivers};
+  };
+
+  const prevMonth=()=>{if(viewMonth===0){setViewMonth(11);setViewYear(y=>y-1)}else setViewMonth(m=>m-1)};
+  const nextMonth=()=>{if(viewMonth===11){setViewMonth(0);setViewYear(y=>y+1)}else setViewMonth(m=>m+1)};
+  const goToday=()=>{setViewMonth(now.getMonth());setViewYear(now.getFullYear());setSelectedDate(now)};
+
+  // Monthly totals
+  const monthStats=useMemo(()=>{
+    let t=0,r=0,pl=0,unpl=0,conf=0;
+    calendarDays.filter(c=>c.inMonth).forEach(c=>{
+      const dd=getDayData(c.date);
+      t+=dd.dayTours.length;r+=dd.dayRentals.length;
+      pl+=dd.planned.length;unpl+=dd.unplanned.length;
+      conf+=dd.conflicts.length;
+    });
+    return{t,r,pl,unpl,conf};
+  },[calendarDays,toursByDate,rentalsByDate,tours]);
+
+  // Detail panel for selected date
+  const selData=selectedDate?getDayData(selectedDate):null;
+
+  const chipStyle=(bg,color)=>({display:'inline-block',padding:'2px 7px',borderRadius:10,fontSize:10,fontWeight:600,background:bg,color:color,marginRight:4});
+
+  return <div>
+    <div className="topbar"><h2>{'\u{1F4C5}'} Планиране</h2></div>
+    <div className="stats-row">
+      <div className="stat-card"><div className="label">Турове за {MNAMES[viewMonth]}</div><div className="value blue">{monthStats.t}</div></div>
+      <div className="stat-card"><div className="label">Планирани</div><div className="value green">{monthStats.pl}</div></div>
+      <div className="stat-card"><div className="label">Непланирани</div><div className="value" style={{color:monthStats.unpl>0?'var(--red)':'var(--green)'}}>{monthStats.unpl}</div></div>
+      <div className="stat-card"><div className="label">Наеми</div><div className="value orange">{monthStats.r}</div></div>
+      <div className="stat-card"><div className="label">Конфликти</div><div className="value" style={{color:monthStats.conf>0?'var(--red)':'var(--green)'}}>{monthStats.conf}</div></div>
+    </div>
+
+    <div style={{display:'flex',gap:20,alignItems:'flex-start'}}>
+      {/* LEFT: Calendar */}
+      <div style={{flex:'1 1 auto',minWidth:0}}>
+        {/* Month nav */}
+        <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:12}}>
+          <button className="btn btn-ghost btn-sm" onClick={prevMonth}>{'◀'}</button>
+          <span style={{fontSize:18,fontWeight:700,color:'var(--accent)',minWidth:180,textAlign:'center'}}>{MNAMES[viewMonth]} {viewYear}</span>
+          <button className="btn btn-ghost btn-sm" onClick={nextMonth}>{'▶'}</button>
+          <button className="btn btn-ghost btn-sm" onClick={goToday} style={{marginLeft:8}}>Днес</button>
+        </div>
+        {/* Day headers */}
+        <div className="cal-grid">
+          {DNAMES.map(d=><div key={d} className="cal-header">{d}</div>)}
+          {calendarDays.map((cell,i)=>{
+            const dd=getDayData(cell.date);
+            const total=dd.dayTours.length+dd.dayRentals.length;
+            const hasIssue=dd.noCar.length>0||dd.noGuide.length>0||dd.conflicts.length>0;
+            const isSel=selectedDate&&sameDay(selectedDate,cell.date);
+            return <div key={i} className="cal-day" onClick={()=>setSelectedDate(new Date(cell.date))} style={{
+              opacity:cell.inMonth?1:.35,
+              cursor:'pointer',
+              border:isSel?'2px solid var(--accent)':'1px solid var(--border)',
+              background:isToday(cell.date)?'rgba(200,165,78,.1)':isSel?'rgba(123,35,50,.04)':'var(--card)',
+              transition:'all .1s'
+            }}>
+              <div style={{fontWeight:isToday(cell.date)?800:600,fontSize:13,marginBottom:4,color:isToday(cell.date)?'var(--gold)':cell.date.getDay()===0?'var(--red)':'var(--text)'}}>
+                {cell.date.getDate()}
+              </div>
+              {dd.planned.length>0&&<div style={chipStyle('rgba(45,138,78,.12)','var(--green)')}>{dd.planned.length} {'✓'}</div>}
+              {dd.unplanned.length>0&&<div style={chipStyle('rgba(192,57,43,.1)','var(--red)')}>{dd.unplanned.length} {'?'}</div>}
+              {dd.dayRentals.length>0&&<div style={chipStyle('rgba(217,119,6,.1)','var(--orange)')}>{dd.dayRentals.length} наем</div>}
+              {dd.conflicts.length>0&&<div style={chipStyle('rgba(192,57,43,.12)','var(--red)')}>{'!'} конфл.</div>}
+            </div>
+          })}
+        </div>
+      </div>
+
+      {/* RIGHT: Detail panel */}
+      <div style={{width:380,minWidth:380,flexShrink:0,position:'sticky',top:24}}>
+        {selectedDate&&selData?<div style={{background:'var(--card)',borderRadius:10,border:'1px solid var(--border)',boxShadow:'0 2px 8px rgba(0,0,0,.06)',overflow:'hidden'}}>
+          {/* Date header */}
+          <div style={{background:'var(--accent)',color:'#fff',padding:'14px 18px'}}>
+            <div style={{fontSize:18,fontWeight:700}}>{fmtD(selectedDate)}</div>
+            <div style={{fontSize:13,opacity:.8}}>{DNAMES[selectedDate.getDay()===0?6:selectedDate.getDay()-1]}, {MNAMES[selectedDate.getMonth()]}</div>
+          </div>
+          <div style={{padding:'16px 18px',maxHeight:'65vh',overflowY:'auto'}}>
+
+            {/* Турове */}
+            <div style={{marginBottom:16}}>
+              <div style={{fontSize:13,fontWeight:700,color:'var(--accent)',marginBottom:8,borderBottom:'2px solid var(--accent)',paddingBottom:4}}>Турове ({selData.dayTours.length})</div>
+              {selData.dayTours.length===0&&<div style={{fontSize:12,color:'var(--text2)',padding:'8px 0'}}>Няма турове за този ден</div>}
+              {selData.dayTours.map((t,i)=>{const tp=isPlanned(t);const isWalk=t.tourType==='guide_only'||t.tourType==='walking';
+              return <div key={i} style={{padding:'8px 10px',marginBottom:6,borderRadius:6,background:tp?'rgba(45,138,78,.04)':'var(--bg)',border:tp?'1px solid rgba(45,138,78,.25)':'1px solid var(--border)',fontSize:12}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:3}}>
+                  <span style={{fontWeight:700}}>{t.tour||t.name||'Тур'}</span>
+                  <span className={`badge ${tp?'badge-green':t.tourStatus==='conducted'?'badge-green':t.tourStatus==='cancelled'?'badge-red':'badge-yellow'}`} style={{fontSize:10}}>
+                    {tp?'Планиран':t.tourStatus==='conducted'?'Проведен':t.tourStatus==='cancelled'?'Отказан':'Резервация'}
+                  </span>
+                </div>
+                <div style={{display:'flex',flexWrap:'wrap',gap:'4px 12px',color:'var(--text2)'}}>
+                  <span>Клиент: <strong style={{color:'var(--text)'}}>{t.name||'—'}</strong></span>
+                  {t.pickupTime&&<span>Час: <strong style={{color:'var(--text)'}}>{t.pickupTime}</strong></span>}
+                  {isWalk&&<span className="badge badge-blue" style={{fontSize:9}}>Пешеходен</span>}
+                </div>
+                <div style={{display:'flex',flexDirection:'column',gap:4,marginTop:6}}>
+                  {/* Кола */}
+                  {!isWalk&&<div style={{display:'flex',alignItems:'center',gap:6}}>
+                    <span style={{fontSize:11,color:'var(--text2)',minWidth:50}}>Кола:</span>
+                    {t.carNumber?<span style={{display:'flex',alignItems:'center',gap:4}}>
+                      <a href="#" onClick={e=>{e.preventDefault();setPopover({tourId:t.id,field:'car'})}} style={{color:'var(--green)',fontWeight:600,fontSize:11,textDecoration:'underline',textDecorationStyle:'dotted',cursor:'pointer'}}>{t.carNumber}</a>
+                      <span onClick={()=>assignCar(t.id,'')} style={{color:'var(--red)',cursor:'pointer',fontSize:13,lineHeight:1}} title="Премахни">{'✕'}</span>
+                    </span>:
+                    <a href="#" onClick={e=>{e.preventDefault();setPopover({tourId:t.id,field:'car'})}} style={{color:'var(--red)',fontWeight:600,fontSize:11,textDecoration:'underline',cursor:'pointer'}}>{'✕'} Няма</a>}
+                    {popover&&popover.tourId===t.id&&popover.field==='car'&&<div ref={popRef} style={{position:'absolute',right:10,zIndex:50,background:'var(--card)',border:'1px solid var(--border)',borderRadius:8,boxShadow:'0 4px 16px rgba(0,0,0,.15)',padding:10,minWidth:220,maxHeight:200,overflowY:'auto',marginTop:2}}>
+                      <div style={{fontSize:11,color:'var(--text2)',marginBottom:6,fontWeight:600}}>Свободни коли:</div>
+                      {selData.freeCars.length===0&&<div style={{fontSize:11,color:'var(--red)'}}>Няма свободни</div>}
+                      <div style={{display:'flex',flexDirection:'column',gap:3}}>
+                        {selData.freeCars.map(v=><div key={v.id} onClick={()=>assignCar(t.id,v.name)} style={{padding:'5px 8px',borderRadius:5,cursor:'pointer',fontSize:11,background:'rgba(45,138,78,.06)',border:'1px solid rgba(45,138,78,.15)',color:'var(--green)',fontWeight:500}} onMouseEnter={e=>e.currentTarget.style.background='rgba(45,138,78,.15)'} onMouseLeave={e=>e.currentTarget.style.background='rgba(45,138,78,.06)'}>{v.name}{v.seats?' ('+v.seats+')':''}</div>)}
+                      </div>
+                    </div>}
+                  </div>}
+                  {/* Гид */}
+                  <div style={{display:'flex',alignItems:'center',gap:6}}>
+                    <span style={{fontSize:11,color:'var(--text2)',minWidth:50}}>Гид:</span>
+                    {t.guide?<span style={{display:'flex',alignItems:'center',gap:4}}>
+                      <a href="#" onClick={e=>{e.preventDefault();setPopover({tourId:t.id,field:'guide'})}} style={{color:'var(--green)',fontWeight:600,fontSize:11,textDecoration:'underline',textDecorationStyle:'dotted',cursor:'pointer'}}>{t.guide}</a>
+                      <span onClick={()=>assignGuide(t.id,'')} style={{color:'var(--red)',cursor:'pointer',fontSize:13,lineHeight:1}} title="Премахни">{'✕'}</span>
+                    </span>:
+                    <a href="#" onClick={e=>{e.preventDefault();setPopover({tourId:t.id,field:'guide'})}} style={{color:'var(--red)',fontWeight:600,fontSize:11,textDecoration:'underline',cursor:'pointer'}}>{'✕'} Няма</a>}
+                    {popover&&popover.tourId===t.id&&popover.field==='guide'&&<div ref={popRef} style={{position:'absolute',right:10,zIndex:50,background:'var(--card)',border:'1px solid var(--border)',borderRadius:8,boxShadow:'0 4px 16px rgba(0,0,0,.15)',padding:10,minWidth:200,maxHeight:200,overflowY:'auto',marginTop:2}}>
+                      <div style={{fontSize:11,color:'var(--text2)',marginBottom:6,fontWeight:600}}>Свободни гидове:</div>
+                      {selData.freeGuides.length===0&&<div style={{fontSize:11,color:'var(--red)'}}>Няма свободни</div>}
+                      <div style={{display:'flex',flexDirection:'column',gap:3}}>
+                        {selData.freeGuides.map(g=><div key={g.name} onClick={()=>assignGuide(t.id,g.name)} style={{padding:'5px 8px',borderRadius:5,cursor:'pointer',fontSize:11,background:'rgba(45,138,78,.06)',border:'1px solid rgba(45,138,78,.15)',color:'var(--green)',fontWeight:500}} onMouseEnter={e=>e.currentTarget.style.background='rgba(45,138,78,.15)'} onMouseLeave={e=>e.currentTarget.style.background='rgba(45,138,78,.06)'}>{g.name}</div>)}
+                      </div>
+                    </div>}
+                  </div>
+                  {/* Шофьор */}
+                  {!isWalk&&<div style={{display:'flex',alignItems:'center',gap:6}}>
+                    <span style={{fontSize:11,color:'var(--text2)',minWidth:50}}>Шофьор:</span>
+                    {t.driver?<span style={{display:'flex',alignItems:'center',gap:4}}>
+                      <a href="#" onClick={e=>{e.preventDefault();setPopover({tourId:t.id,field:'driver'});setDriverInput(t.driver||'')}} style={{color:'var(--green)',fontWeight:600,fontSize:11,textDecoration:'underline',textDecorationStyle:'dotted',cursor:'pointer'}}>{t.driver}</a>
+                      <span onClick={()=>assignDriver(t.id,'')} style={{color:'var(--red)',cursor:'pointer',fontSize:13,lineHeight:1}} title="Премахни">{'✕'}</span>
+                    </span>:
+                    <a href="#" onClick={e=>{e.preventDefault();setPopover({tourId:t.id,field:'driver'});setDriverInput('')}} style={{color:'var(--red)',fontWeight:600,fontSize:11,textDecoration:'underline',cursor:'pointer'}}>{'✕'} Няма</a>}
+                    {popover&&popover.tourId===t.id&&popover.field==='driver'&&<div ref={popRef} style={{position:'absolute',right:10,zIndex:50,background:'var(--card)',border:'1px solid var(--border)',borderRadius:8,boxShadow:'0 4px 16px rgba(0,0,0,.15)',padding:10,minWidth:200,marginTop:2}}>
+                      <div style={{fontSize:11,color:'var(--text2)',marginBottom:6,fontWeight:600}}>Име на шофьор:</div>
+                      <div style={{display:'flex',gap:4}}>
+                        <input value={driverInput} onChange={e=>setDriverInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&driverInput.trim())assignDriver(t.id,driverInput.trim())}} placeholder="Въведи име..." style={{flex:1,padding:'5px 8px',borderRadius:5,border:'1px solid var(--border)',fontSize:11}} autoFocus/>
+                        <button onClick={()=>{if(driverInput.trim())assignDriver(t.id,driverInput.trim())}} className="btn btn-primary btn-sm" style={{fontSize:10,padding:'4px 8px'}}>OK</button>
+                      </div>
+                    </div>}
+                  </div>}
+                </div>
+              </div>})}
+            </div>
+
+            {/* Наеми */}
+            {selData.dayRentals.length>0&&<div style={{marginBottom:16}}>
+              <div style={{fontSize:13,fontWeight:700,color:'var(--orange)',marginBottom:8,borderBottom:'2px solid var(--orange)',paddingBottom:4}}>Наеми ({selData.dayRentals.length})</div>
+              {selData.dayRentals.map((r,i)=><div key={i} style={{padding:'8px 10px',marginBottom:6,borderRadius:6,background:'rgba(217,119,6,.04)',border:'1px solid rgba(217,119,6,.2)',fontSize:12}}>
+                <div style={{fontWeight:700,marginBottom:3}}>{r.vehicle||'Кола'}</div>
+                <div style={{color:'var(--text2)'}}>Клиент: <strong style={{color:'var(--text)'}}>{r.client||'—'}</strong></div>
+                <div style={{color:'var(--text2)'}}>Период: {r.dateFrom} — {r.dateTo} ({r.days} дни) | <strong style={{color:'var(--green)'}}>{r.totalPrice} EUR</strong></div>
+              </div>)}
+            </div>}
+
+            {/* Конфликти */}
+            {selData.conflicts.length>0&&<div style={{marginBottom:16}}>
+              <div style={{fontSize:13,fontWeight:700,color:'var(--red)',marginBottom:8,borderBottom:'2px solid var(--red)',paddingBottom:4}}>{'!'} Конфликти</div>
+              {selData.conflicts.map((c,i)=><div key={i} style={{padding:'8px 10px',marginBottom:4,borderRadius:6,background:'rgba(192,57,43,.06)',border:'1px solid rgba(192,57,43,.2)',fontSize:12,color:'var(--red)',fontWeight:600}}>
+                {c} — използва се повече от веднъж!
+              </div>)}
+            </div>}
+
+            {/* Свободни коли */}
+            <div style={{marginBottom:16}}>
+              <div style={{fontSize:13,fontWeight:700,color:'var(--green)',marginBottom:8,borderBottom:'2px solid var(--green)',paddingBottom:4}}>Свободни коли ({selData.freeCars.length})</div>
+              {selData.freeCars.length===0?<div style={{fontSize:12,color:'var(--red)',padding:'4px 0'}}>Всички коли са заети!</div>:
+              <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+                {selData.freeCars.map(v=><span key={v.id} style={{padding:'3px 8px',borderRadius:6,background:'rgba(45,138,78,.08)',border:'1px solid rgba(45,138,78,.2)',fontSize:11,color:'var(--green)'}}>{v.name}</span>)}
+              </div>}
+            </div>
+
+            {/* Свободни гидове */}
+            <div>
+              <div style={{fontSize:13,fontWeight:700,color:'var(--green)',marginBottom:8,borderBottom:'2px solid var(--green)',paddingBottom:4}}>Свободни гидове ({selData.freeGuides.length})</div>
+              {selData.freeGuides.length===0?<div style={{fontSize:12,color:'var(--red)',padding:'4px 0'}}>Всички гидове са заети!</div>:
+              <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+                {selData.freeGuides.map(g=><span key={g.name} style={{padding:'3px 8px',borderRadius:6,background:'rgba(45,138,78,.08)',border:'1px solid rgba(45,138,78,.2)',fontSize:11,color:'var(--green)'}}>{g.name}</span>)}
+              </div>}
+            </div>
+
+          </div>
+        </div>:<div style={{background:'var(--card)',borderRadius:10,border:'1px solid var(--border)',padding:'40px 20px',textAlign:'center',color:'var(--text2)'}}>
+          <div style={{fontSize:32,marginBottom:8}}>{'\u{1F447}'}</div>
+          <div style={{fontSize:14}}>Кликни на ден от календара за детайли</div>
+        </div>}
+      </div>
+    </div>
+  </div>
+}
+
 // ============= MAIN APP =============
 function App(){
   const [page,setPage]=useState('dashboard');
@@ -1312,6 +1722,7 @@ function App(){
   const [stopsGuide,setStopsGuide]=useState(INIT.stopsGuide);
   const [tours,setTours]=useState(INIT.tours);
   const [catalog,setCatalog]=useState(()=>buildInitialCatalog(INIT.tours));
+  const [carRentals,setCarRentals]=useState([]);
   const [vehicles,setVehicles]=useState(INIT.vehicles||[
     {id:1,name:'СВ 0470 ММ - H1бус',seats:'8+1',active:true},
     {id:2,name:'РВ 4806 ХС-Е класа',seats:'3+1',active:true},
@@ -1329,6 +1740,7 @@ function App(){
   const navItems=[
     {id:'dashboard',label:'Dashboard',icon:'\u{1F4CA}'},
     {group:'ТУРОВЕ'},
+    {id:'planning',label:'Планиране',icon:'\u{1F4C5}'},
     {id:'catalog',label:'Каталог турове',icon:'\u{1F4E6}'},
     {id:'tours',label:'Месечни турове',icon:'\u{1F5D3}'},
     {group:'ХОРА'},
@@ -1337,6 +1749,7 @@ function App(){
     {id:'stopsGuide',label:'STOP Гидове',icon:'\u{1F6AB}'},
     {group:'ТРАНСПОРТ'},
     {id:'fleet',label:'Автопарк',icon:'\u{1F697}'},
+    {id:'carRental',label:'Наем автомобил',icon:'\u{1F511}'},
     {id:'fuel',label:'Гориво',icon:'\u26FD'},
     {id:'stopsCarBus',label:'STOP Бус/Кола',icon:'\u{1F690}'},
     {id:'carTasks',label:'Задачи коли',icon:'\u{1F527}'},
@@ -1345,11 +1758,13 @@ function App(){
   const renderPage=()=>{
     switch(page){
       case 'dashboard': return <Dashboard tours={tours} guides={guides} fuel={fuel} carTasks={carTasks}/>;
+      case 'planning': return <PlanningPage tours={tours} setTours={setTours} carRentals={carRentals} vehicles={vehicles} guides={guides}/>;
       case 'catalog': return <CatalogPage catalog={catalog} setCatalog={setCatalog}/>;
       case 'tours': return <ToursPage tours={tours} setTours={setTours} guides={guides} catalog={catalog} vehicles={vehicles}/>;
       case 'guides': return <GuidesPage guides={guides} setGuides={setGuides}/>;
       case 'guideDossier': return <GuideDossierPage tours={tours} guides={guides} stopsGuide={stopsGuide}/>;
       case 'fleet': return <FleetPage tours={tours} fuel={fuel} fines={fines} carTasks={carTasks} stopsCarBus={stopsCarBus} vehicles={vehicles} setVehicles={setVehicles}/>;
+      case 'carRental': return <CarRentalPage rentals={carRentals} setRentals={setCarRentals} vehicles={vehicles}/>;
       case 'fuel': return <FuelPage fuel={fuel} setFuel={setFuel}/>;
       case 'stopsCarBus': return <StopsCarPage stops={stopsCarBus} setStops={setStopsCarBus}/>;
       case 'fines': return <FinesPage fines={fines} setFines={setFines}/>;

@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useAppState } from './hooks/useAppState';
+import { useAuth } from './hooks/useAuth';
+import LoginPage from './pages/LoginPage';
 
 import Dashboard from './pages/Dashboard';
 import PlanningPage from './pages/PlanningPage';
@@ -38,7 +40,22 @@ const navItems = [
 
 export default function App() {
   const [page, setPage] = useState('dashboard');
+  const { user, loading: authLoading, signIn, signOut } = useAuth();
   const state = useAppState();
+
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div style={{display:'flex',justifyContent:'center',alignItems:'center',height:'100vh',fontSize:18,color:'#888',background:'#0f172a'}}>
+        <span style={{color:'#fff'}}>Зареждане...</span>
+      </div>
+    );
+  }
+
+  // Show login if not authenticated
+  if (!user) {
+    return <LoginPage onLogin={signIn} />;
+  }
 
   const renderPage = () => {
     switch (page) {
@@ -70,6 +87,14 @@ export default function App() {
               <span className="icon">{it.icon}</span><span className="label">{it.label}</span>
             </div>
         )}
+        <div style={{borderTop:'1px solid rgba(255,255,255,.1)',margin:'16px 12px 8px',paddingTop:12}}>
+          <div style={{padding:'6px 16px',fontSize:12,color:'rgba(255,255,255,.5)',overflow:'hidden',textOverflow:'ellipsis'}}>
+            {user.email}
+          </div>
+          <div className="nav-item" onClick={signOut} style={{color:'#f87171'}}>
+            <span className="icon">🚪</span><span className="label">Изход</span>
+          </div>
+        </div>
       </div>
       <div className="main">
         {state.loading

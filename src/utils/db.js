@@ -61,9 +61,28 @@ const TABLE_MAP = {
   carRentals: 'car_rentals',
 };
 
+/** Fields to exclude from Supabase writes (computed client-side) */
+const EXCLUDE_FIELDS = new Set(['totalExpenses', 'balanceEur', 'total_expenses', 'balance_eur']);
+
+/**
+ * Clean row for Supabase insert/update
+ * @param {Object} row
+ * @returns {Object}
+ */
+function cleanRow(row) {
+  const snake = keysToSnake(row);
+  delete snake.id;
+  delete snake.created_at;
+  for (const f of EXCLUDE_FIELDS) {
+    delete snake[f];
+    delete snake[toSnake(f)];
+  }
+  return snake;
+}
+
 /**
  * Load all data from Supabase
- * @returns {Promise<Object>} all app data
+ * @returns {Promise<Object|null>} all app data
  */
 export async function loadAllData() {
   if (!supabase) return null;
@@ -94,102 +113,59 @@ export async function loadAllData() {
 }
 
 /**
- * Insert a row into a table
- * @param {string} stateKey - the app state key (e.g. 'tours')
- * @param {Object} row - the camelCase row data
- * @returns {Promise<Object|null>} inserted row in camelCase, or null
- */
-export async function insertRow(stateKey, row) {
-  if (!supabase) return null;
-  const tableName = TABLE_MAP[stateKey];
-  if (!tableName) return null;
-
-  const snakeRow = keysToSnake(row);
-  // Remove client-generated id — let Supabase auto-generate
-  delete snakeRow.id;
-  // Remove computed fields
-  delete snakeRow.total_expenses;
-  delete snakeRow.balance_eur;
-
-  const { data, error } = await supabase
-    .from(tableName)
-    .insert(snakeRow)
-    .select()
-    .single();
-
-  if (error) {
-    console.error(`Insert error (${tableName}):`, error.message);
-    return null;
-  }
-  return keysToCamel(data);
-}
-
-/**
- * Update a row in a table
+ * Sync diff between old and new arrays to Supabase.
+ * Detects inserts, updates, and deletes automatically.
  * @param {string} stateKey
- * @param {number} id
- * @param {Object} updates - camelCase partial object
- * @returns {Promise<Object|null>}
+ * @param {Array} prev - previous array
+ * @param {Array} next - new array
  */
-export async function updateRow(stateKey, id, updates) {
-  if (!supabase) return null;
+export async function syncDiff(stateKey, prev, next) {
+  if (!supabase) return;
   const tableName = TABLE_MAP[stateKey];
-  if (!tableName) return null;
+  if (!tableName) return;
 
-  const snakeUpdates = keysToSnake(updates);
-  delete snakeUpdates.id;
-  delete snakeUpdates.total_expenses;
-  delete snakeUpdates.balance_eur;
+  const prevMap = new Map(prev.map(r => [r.id, r]));
+  const nextMap = new Map(next.map(r => [r.id, r]));
 
-  const { data, error } = await supabase
-    .from(tableName)
-    .update(snakeUpdates)
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) {
-    console.error(`Update error (${tableName}):`, error.message);
-    return null;
+  // Deleted items
+  for (const [id] of prevMap) {
+    if (!nextMap.has(id)) {
+      supabase.from(tableName).delete().eq('id', id).then(({ error }) => {
+        if (error) console.error(`Delete ${tableName}#${id}:`, error.message);
+      });
+    }
   }
-  return keysToCamel(data);
+
+  // New or updated items
+  for (const [id, row] of nextMap) {
+    const old = prevMap.get(id);
+    if (!old) {
+      // New item — insert
+      const cleaned = cleanRow(row);
+      supabase.from(tableName).insert(cleaned).select().single().then(({ data, error }) => {
+        if (error) console.error(`Insert ${tableName}:`, error.message);
+        // Note: we don't update local state with DB id here because
+        // the local genId is used. On next full reload, DB ids will be used.
+      });
+    } else if (JSON.stringify(old) !== JSON.stringify(row)) {
+      // Updated item
+      const cleaned = cleanRow(row);
+      supabase.from(tableName).update(cleaned).eq('id', id).then(({ error }) => {
+        if (error) console.error(`Update ${tableName}#${id}:`, error.message);
+      });
+    }
+  }
 }
 
 /**
- * Delete a row from a table
- * @param {string} stateKey
- * @param {number} id
- * @returns {Promise<boolean>}
- */
-export async function deleteRow(stateKey, id) {
-  if (!supabase) return false;
-  const tableName = TABLE_MAP[stateKey];
-  if (!tableName) return false;
-
-  const { error } = await supabase
-    .from(tableName)
-    .delete()
-    .eq('id', id);
-
-  if (error) {
-    console.error(`Delete error (${tableName}):`, error.message);
-    return false;
-  }
-  return true;
-}
-
-/**
- * Replace all languages
+ * Replace all languages in Supabase
  * @param {string[]} langs
  * @returns {Promise<boolean>}
  */
-export async function saveLanguages(langs) {
+export async function saveLanguagesDB(langs) {
   if (!supabase) return false;
 
-  // Delete all existing
   await supabase.from('tour_languages').delete().neq('id', 0);
-
-  // Insert new ones
   const rows = langs.map(name => ({ name }));
   const { error } = await supabase.from('tour_languages').insert(rows);
 

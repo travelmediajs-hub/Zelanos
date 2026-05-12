@@ -30,6 +30,25 @@ function cleanRow(row) {
   return snake;
 }
 
+/** Fields that must be numeric — non-numeric values get replaced with 0 */
+const NUMERIC_FIELDS = {
+  fuel: ['km_start', 'km_end', 'total_km', 'price_per_liter', 'total_fuel_cost', 'liters'],
+  fines: ['amount'],
+  tours: ['adults', 'children', 'price_adult', 'price_child', 'collected', 'expenses'],
+};
+
+function sanitizeNumericFields(row, tableName) {
+  const fields = NUMERIC_FIELDS[tableName];
+  if (!fields) return row;
+  const out = { ...row };
+  for (const f of fields) {
+    if (f in out && (out[f] === '' || out[f] === null || out[f] === undefined || isNaN(Number(out[f])))) {
+      out[f] = 0;
+    }
+  }
+  return out;
+}
+
 const TABLE_MAP = {
   guides: 'guides',
   fuel: 'fuel',
@@ -74,7 +93,7 @@ export async function migrateToSupabase(appData, onProgress) {
     }
 
     // Insert in batches
-    const cleaned = items.map(cleanRow);
+    const cleaned = items.map(r => sanitizeNumericFields(cleanRow(r), tableName));
     let inserted = 0;
     const batchSize = 50;
 

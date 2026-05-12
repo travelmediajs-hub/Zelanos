@@ -1,0 +1,77 @@
+import { useState } from 'react';
+import { useAppState } from './hooks/useAppState';
+
+import Dashboard from './pages/Dashboard';
+import PlanningPage from './pages/PlanningPage';
+import ToursPage from './pages/ToursPage';
+import RoundTripsPage from './pages/RoundTripsPage';
+import CarRentalPage from './pages/CarRentalPage';
+import CatalogPage from './pages/CatalogPage';
+import GuidesPage from './pages/GuidesPage';
+import GuideDossierPage from './pages/GuideDossierPage';
+import StopsGuidePage from './pages/StopsGuidePage';
+import FleetPage from './pages/FleetPage';
+import FuelPage from './pages/FuelPage';
+import StopsCarPage from './pages/StopsCarPage';
+import CarTasksPage from './pages/CarTasksPage';
+import FinesPage from './pages/FinesPage';
+
+const navItems = [
+  { id: 'dashboard', label: 'Dashboard', icon: '\u{1F4CA}' },
+  { id: 'planning', label: 'Планиране', icon: '\u{1F4C5}' },
+  { group: 'ПРОДАЖБИ' },
+  { id: 'tours', label: 'Турове', icon: '\u{1F5D3}' },
+  { id: 'roundTrips', label: 'Обиколни турове', icon: '\u{1F30D}' },
+  { id: 'carRental', label: 'Коли под наем', icon: '\u{1F511}' },
+  { id: 'catalog', label: 'Каталог турове', icon: '\u{1F4E6}' },
+  { group: 'ХОРА' },
+  { id: 'guides', label: 'Гидове', icon: '\u{1F9D1}‍\u{1F3EB}' },
+  { id: 'guideDossier', label: 'Досиета гидове', icon: '\u{1F4CB}' },
+  { id: 'stopsGuide', label: 'STOP Гидове', icon: '\u{1F6AB}' },
+  { group: 'ТРАНСПОРТ' },
+  { id: 'fleet', label: 'Автопарк', icon: '\u{1F697}' },
+  { id: 'fuel', label: 'Гориво', icon: '⛽' },
+  { id: 'stopsCarBus', label: 'STOP Бус/Кола', icon: '\u{1F690}' },
+  { id: 'carTasks', label: 'Задачи коли', icon: '\u{1F527}' },
+  { id: 'fines', label: 'Фишове', icon: '\u{1F4DD}' },
+];
+
+export default function App() {
+  const [page, setPage] = useState('dashboard');
+  const state = useAppState();
+
+  const renderPage = () => {
+    switch (page) {
+      case 'dashboard': return <Dashboard tours={state.tours} guides={state.guides} fuel={state.fuel} carTasks={state.carTasks} />;
+      case 'planning': return <PlanningPage tours={state.tours} setTours={state.setTours} carRentals={state.carRentals} roundTrips={state.roundTrips} vehicles={state.vehicles} guides={state.guides} stopsCarBus={state.stopsCarBus} />;
+      case 'catalog': return <CatalogPage catalog={state.catalog} setCatalog={state.setCatalog} />;
+      case 'tours': return <ToursPage tours={state.tours} setTours={state.setTours} guides={state.guides} catalog={state.catalog} vehicles={state.vehicles} roundTrips={state.roundTrips} stopsCarBus={state.stopsCarBus} tourLanguages={state.tourLanguages} setTourLanguages={state.setTourLanguages} carRentals={state.carRentals} />;
+      case 'guides': return <GuidesPage guides={state.guides} setGuides={state.setGuides} />;
+      case 'guideDossier': return <GuideDossierPage tours={state.tours} guides={state.guides} stopsGuide={state.stopsGuide} />;
+      case 'stopsGuide': return <StopsGuidePage stops={state.stopsGuide} setStops={state.setStopsGuide} />;
+      case 'fleet': return <FleetPage tours={state.tours} fuel={state.fuel} fines={state.fines} carTasks={state.carTasks} stopsCarBus={state.stopsCarBus} vehicles={state.vehicles} setVehicles={state.setVehicles} />;
+      case 'carRental': return <CarRentalPage rentals={state.carRentals} setRentals={state.setCarRentals} vehicles={state.vehicles} roundTrips={state.roundTrips} stopsCarBus={state.stopsCarBus} tours={state.tours} />;
+      case 'roundTrips': return <RoundTripsPage roundTrips={state.roundTrips} setRoundTrips={state.setRoundTrips} vehicles={state.vehicles} guides={state.guides} tours={state.tours} carRentals={state.carRentals} stopsCarBus={state.stopsCarBus} />;
+      case 'fuel': return <FuelPage fuel={state.fuel} setFuel={state.setFuel} />;
+      case 'stopsCarBus': return <StopsCarPage stops={state.stopsCarBus} setStops={state.setStopsCarBus} />;
+      case 'carTasks': return <CarTasksPage tasks={state.carTasks} setTasks={state.setCarTasks} />;
+      case 'fines': return <FinesPage fines={state.fines} setFines={state.setFines} />;
+      default: return <Dashboard tours={state.tours} guides={state.guides} fuel={state.fuel} carTasks={state.carTasks} />;
+    }
+  };
+
+  return (
+    <div style={{ display: 'flex', minHeight: '100vh' }}>
+      <div className="sidebar">
+        <h1><span>Zelanos Tours</span></h1>
+        {navItems.map((it, i) => it.group
+          ? <div key={i} className="nav-group">{it.group}</div>
+          : <div key={it.id} onClick={() => setPage(it.id)} className={'nav-item' + (page === it.id ? ' active' : '')}>
+              <span className="icon">{it.icon}</span><span className="label">{it.label}</span>
+            </div>
+        )}
+      </div>
+      <div className="main">{renderPage()}</div>
+    </div>
+  );
+}

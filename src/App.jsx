@@ -71,7 +71,11 @@ export default function App() {
             </div>
         )}
       </div>
-      <div className="main">{renderPage()}</div>
+      <div className="main">
+        {state.loading
+          ? <div style={{display:'flex',justifyContent:'center',alignItems:'center',height:'60vh',fontSize:18,color:'#888'}}>Зареждане...</div>
+          : renderPage()}
+      </div>
     </div>
   );
 }

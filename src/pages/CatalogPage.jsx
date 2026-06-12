@@ -18,8 +18,10 @@ function CatalogPage({catalog,setCatalog}){
   const filtered=useMemo(()=>{const s=search.toLowerCase();return !s?catalog:catalog.filter(c=>c.name.toLowerCase().includes(s))},[catalog,search]);
   const blank={name:'',languages:[],salePrice:null,childPrice:null,duration:'',needsCar:true,isEvening:false,description:''};
   const save=(form)=>{
-    if(typeof form.languages==='string')form.languages=form.languages.split(',').map(s=>s.trim()).filter(Boolean);
-    if(form.id){setCatalog(p=>p.map(c=>c.id===form.id?form:c))}else{setCatalog(p=>[...p,{...form,id:genId(p)}])};setEditing(null)};
+    const clean=typeof form.languages==='string'
+      ?{...form,languages:form.languages.split(',').map(s=>s.trim()).filter(Boolean)}
+      :form;
+    if(clean.id){setCatalog(p=>p.map(c=>c.id===clean.id?clean:c))}else{setCatalog(p=>[...p,{...clean,id:genId(p)}])};setEditing(null)};
   const del=()=>{setCatalog(p=>p.filter(c=>c.id!==delId));setDelId(null)};
   return <div>
     <div className="topbar"><h2>Каталог турове ({filtered.length})</h2><div style={{display:'flex',gap:8}}>

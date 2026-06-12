@@ -106,7 +106,7 @@ function ToursPage({tours,setTours,guides,catalog,vehicles,roundTrips,stopsCarBu
     if(dateFrom||dateTo){const df=dateFrom?parseDateISO(dateFrom):null;const dt=dateTo?parseDateISO(dateTo):null;
       list=list.filter(t=>{const d=parseDate(t.date);if(!d)return false;if(df&&d<df)return false;if(dt){const dte=new Date(dt);dte.setHours(23,59,59);if(d>dte)return false}return true})}
     const s=search.toLowerCase();return !s?list:list.filter(t=>
-    t.tour.toLowerCase().includes(s)||t.name.toLowerCase().includes(s)||t.supplier.toLowerCase().includes(s)||t.guide.toLowerCase().includes(s)||t.date.includes(s)
+    (t.tour||'').toLowerCase().includes(s)||(t.name||'').toLowerCase().includes(s)||(t.supplier||'').toLowerCase().includes(s)||(t.guide||'').toLowerCase().includes(s)||(t.date||'').includes(s)
   )},[monthTours,search,carFilter,statusFilter,dateFrom,dateTo]);
   const monthCounts=useMemo(()=>{const c={};yearTours.forEach(t=>{c[t.month]=(c[t.month]||0)+1});return c},[yearTours]);
   const years=useMemo(()=>[...new Set(tours.map(t=>t.year||2026))].sort(),[tours]);

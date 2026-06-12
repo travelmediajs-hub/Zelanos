@@ -1,28 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { supabase } from '../utils/supabase';
-
-/**
- * Convert snake_case to camelCase
- * @param {string} str
- * @returns {string}
- */
-function toCamel(str) {
-  return str.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
-}
-
-/**
- * Convert object keys from snake_case to camelCase
- * @param {Object} obj
- * @returns {Object}
- */
-function keysToCamel(obj) {
-  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return obj;
-  const out = {};
-  for (const [k, v] of Object.entries(obj)) {
-    out[toCamel(k)] = v;
-  }
-  return out;
-}
+import { keysToCamel } from '../utils/case';
 
 /**
  * Table name -> state key mapping (reverse of TABLE_MAP in db.js)
@@ -39,6 +17,7 @@ const TABLE_TO_STATE = {
   round_trips: 'roundTrips',
   catalog: 'catalog',
   car_rentals: 'carRentals',
+  service_records: 'serviceRecords',
 };
 
 const TABLES = Object.keys(TABLE_TO_STATE);

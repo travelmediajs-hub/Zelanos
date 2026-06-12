@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import MergeCard from './MergeCard';
-import { parseDate, MONTHS } from '../utils/helpers';
+// Бележка: тук НЕ ползваме parseDate от helpers — локалната версия по-долу
+// поддържа и ISO формат (yyyy-mm-dd), нужен за календара.
+import { MONTHS } from '../utils/helpers';
 
 function PlanningPage({tours,setTours,carRentals,roundTrips,vehicles,guides,stopsCarBus}){
   const now=new Date();
@@ -41,12 +43,18 @@ function PlanningPage({tours,setTours,carRentals,roundTrips,vehicles,guides,stop
           alert('⚠️ Колата '+carName+' има '+car.seats+' места ('+maxPax+' пътнически), но са нужни '+totalNeeded+' (туристи + гид). Избери по-голяма кола!');
           return;
         }
-        // Prevent 2 day tours or 2 evening tours with same car
+        // Prevent 2 day tours or 2 evening tours with same car —
+        // освен ако са слети турове (същият гид и шофьор), както в календарната логика
         const slotConflict=sameSlotOther.filter(t=>t.tourStatus!=='cancelled');
         if(slotConflict.length>0){
-          const slotName=thisEvening?'вечерен':'дневен';
-          alert('⚠️ Колата '+carName+' вече има '+slotName+' тур на тази дата!');
-          return;
+          const grp=[tour,...slotConflict];
+          const allSameGuide=grp.every(t=>t.guide&&t.guide===grp[0].guide);
+          const allSameDriver=grp.every(t=>(t.driver||'')===(grp[0].driver||''))||grp.every(t=>t.guideIsDriver);
+          if(!(allSameGuide&&allSameDriver)){
+            const slotName=thisEvening?'вечерен':'дневен';
+            alert('⚠️ Колата '+carName+' вече има '+slotName+' тур на тази дата!');
+            return;
+          }
         }
       }
     }
@@ -67,7 +75,7 @@ function PlanningPage({tours,setTours,carRentals,roundTrips,vehicles,guides,stop
   const [driverInput,setDriverInput]=useState('');
   React.useEffect(()=>{if(!popover)return;const h=e=>{if(popRef.current&&!popRef.current.contains(e.target))setPopover(null)};document.addEventListener('mousedown',h);return()=>document.removeEventListener('mousedown',h)},[popover]);
   React.useEffect(()=>{if(popover&&popover.field==='driver'){const t=tours.find(x=>x.id===popover.tourId);setDriverInput(t&&t.driver||'')}}, [popover]);
-  const MNAMES=['Януари','Февруари','Март','Април','Май','Юни','Юли','Август','Септември','Октомври','Ноември','Декември'];
+  const MNAMES=MONTHS;
   const DNAMES=['Пон','Вто','Сря','Чет','Пет','Съб','Нед'];
 
   const parseDate=(ds)=>{if(!ds)return null;if(ds.includes('.')){const p=ds.split('.');return new Date(+p[2],+p[1]-1,+p[0])}return new Date(ds)};

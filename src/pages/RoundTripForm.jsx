@@ -1,12 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { parseDate, MONTHS } from '../utils/helpers';
+import { parseDate, MONTHS, bgToISO, isoToBG } from '../utils/helpers';
 
 function RoundTripForm({data,onSave,onCancel,vehicles,guides,roundTrips,tours,carRentals,stopsCarBus}){
   const [f,setF]=useState(data);
   const u=(k,v)=>setF(p=>({...p,[k]:v}));
   const [formTab,setFormTab]=useState('info');
-  const toISO=(d)=>d&&d.includes('.')?d.split('.').reverse().join('-'):(d||'');
-  const fromISO=(v)=>{if(!v)return '';const p=v.split('-');return p[2]+'.'+p[1]+'.'+p[0]};
   const vList=(vehicles||[]).filter(v=>v.active);
   
   const from=parseDate(f.dateFrom),to=parseDate(f.dateTo);
@@ -125,8 +123,8 @@ function RoundTripForm({data,onSave,onCancel,vehicles,guides,roundTrips,tours,ca
     {formTab==='info'&&<div>
       <div className="form-grid">
         <div className="form-group full"><label>Име на тура</label><input value={f.name||''} onChange={e=>u('name',e.target.value)} placeholder="напр. Тракийска обиколка 5 дни"/></div>
-        <div className="form-group"><label>От дата</label><input type="date" value={toISO(f.dateFrom)} onChange={e=>u('dateFrom',fromISO(e.target.value))}/></div>
-        <div className="form-group"><label>До дата</label><input type="date" value={toISO(f.dateTo)} onChange={e=>u('dateTo',fromISO(e.target.value))}/></div>
+        <div className="form-group"><label>От дата</label><input type="date" value={bgToISO(f.dateFrom)} onChange={e=>u('dateFrom',isoToBG(e.target.value))}/></div>
+        <div className="form-group"><label>До дата</label><input type="date" value={bgToISO(f.dateTo)} onChange={e=>u('dateTo',isoToBG(e.target.value))}/></div>
         <div className="form-group full"><label>Маршрут</label><input value={f.route||''} onChange={e=>u('route',e.target.value)} placeholder="напр. Пловдив → Казанлък → В. Търново → София"/></div>
       </div>
       <h4 style={{margin:'20px 0 10px',color:'var(--text2)',fontSize:13,borderTop:'1px solid var(--border)',paddingTop:16}}>КЛИЕНТ</h4>

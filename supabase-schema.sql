@@ -185,7 +185,22 @@ create table car_rentals (
   created_at timestamptz default now()
 );
 
--- 12. Tour languages (simple list)
+-- 12. Service records (ръчно добавени сервизни записи от досието на кола)
+create table service_records (
+  id bigint generated always as identity primary key,
+  car_name text default '',
+  date text default '',
+  description text default '',
+  who text default '',
+  cost numeric default 0,
+  notes text default '',
+  type text default 'service',
+  status text default '',
+  priority text default '',
+  created_at timestamptz default now()
+);
+
+-- 13. Tour languages (simple list)
 create table tour_languages (
   id bigint generated always as identity primary key,
   name text not null unique,
@@ -224,6 +239,7 @@ alter table stops_car enable row level security;
 alter table stops_guide enable row level security;
 alter table round_trips enable row level security;
 alter table car_rentals enable row level security;
+alter table service_records enable row level security;
 alter table tour_languages enable row level security;
 
 -- For now: allow all operations for authenticated and anon users
@@ -239,6 +255,7 @@ create policy "Allow all" on stops_car for all using (true) with check (true);
 create policy "Allow all" on stops_guide for all using (true) with check (true);
 create policy "Allow all" on round_trips for all using (true) with check (true);
 create policy "Allow all" on car_rentals for all using (true) with check (true);
+create policy "Allow all" on service_records for all using (true) with check (true);
 create policy "Allow all" on tour_languages for all using (true) with check (true);
 
 -- Enable Realtime for all tables so changes propagate to all connected users
@@ -253,6 +270,7 @@ alter publication supabase_realtime add table stops_car;
 alter publication supabase_realtime add table stops_guide;
 alter publication supabase_realtime add table round_trips;
 alter publication supabase_realtime add table car_rentals;
+alter publication supabase_realtime add table service_records;
 alter publication supabase_realtime add table tour_languages;
 
 -- Full replica identity so DELETE events include the old row data
@@ -267,4 +285,5 @@ alter table stops_car replica identity full;
 alter table stops_guide replica identity full;
 alter table round_trips replica identity full;
 alter table car_rentals replica identity full;
+alter table service_records replica identity full;
 alter table tour_languages replica identity full;

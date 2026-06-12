@@ -1,10 +1,9 @@
 import { useState, useMemo } from 'react';
 import { Modal, ConfirmModal } from '../components/Modal';
-import { genId, parseDate } from '../utils/helpers';
+import { genId, parseDate, calcDays, bgToISO, isoToBG } from '../utils/helpers';
 
 function CarRentalPage({rentals,setRentals,vehicles,roundTrips,stopsCarBus,tours}){
   const [search,setSearch]=useState('');const [editing,setEditing]=useState(null);const [delId,setDelId]=useState(null);
-  const calcDays=(from,to)=>{if(!from||!to)return 0;const a=new Date(from.split('.').reverse().join('-')),b=new Date(to.split('.').reverse().join('-'));const diff=Math.round((b-a)/(1000*60*60*24));return diff>0?diff:1};
   const filtered=useMemo(()=>{const s=search.toLowerCase();return !s?rentals:rentals.filter(r=>(r.client||'').toLowerCase().includes(s)||(r.vehicle||'').toLowerCase().includes(s)||(r.dateFrom||'').includes(s))},[rentals,search]);
   const totalRev=filtered.reduce((a,r)=>a+(r.totalPrice||0),0);
   const blank={dateFrom:'',dateTo:'',timeFrom:'08:00',timeTo:'18:00',client:'',clientPhone:'',clientEmail:'',vehicle:'',pricePerDay:null,days:0,totalPrice:null,notes:''};
@@ -46,9 +45,6 @@ function CarRentalPage({rentals,setRentals,vehicles,roundTrips,stopsCarBus,tours
 
 function CarRentalForm({data,onSave,onCancel,vehicles,roundTrips,stopsCarBus,allRentals,tours}){
   const [f,setF]=useState(data);const u=(k,v)=>setF(p=>({...p,[k]:v}));
-  const toISO=(d)=>d&&d.includes('.')?d.split('.').reverse().join('-'):(d||'');
-  const fromISO=(v)=>{if(!v)return '';const p=v.split('-');return p[2]+'.'+p[1]+'.'+p[0]};
-  const calcDays=(from,to)=>{if(!from||!to)return 0;const a=new Date(from.split('.').reverse().join('-')),b=new Date(to.split('.').reverse().join('-'));const diff=Math.round((b-a)/(1000*60*60*24));return diff>0?diff:1};
   const days=calcDays(f.dateFrom,f.dateTo||f.dateFrom);
   const timeToMin=(t)=>{if(!t)return 0;const p=t.split(':');return(parseInt(p[0])||0)*60+(parseInt(p[1])||0)};
   const timesOverlap=(a1,a2,b1,b2)=>{const am1=timeToMin(a1),am2=timeToMin(a2),bm1=timeToMin(b1),bm2=timeToMin(b2);return am1<bm2&&bm1<am2};
@@ -117,8 +113,8 @@ function CarRentalForm({data,onSave,onCancel,vehicles,roundTrips,stopsCarBus,all
       {rtBlockedCars.has(f.vehicle)&&<div style={{marginTop:4,padding:'6px 10px',borderRadius:6,fontSize:11,background:'rgba(220,38,38,.08)',border:'1px solid rgba(192,57,43,.25)',color:'var(--red)',fontWeight:600}}>⚠️ Тази кола е заета от обиколен тур за периода!</div>}
       {svcBlockedCars.has(f.vehicle)&&<div style={{marginTop:4,padding:'6px 10px',borderRadius:6,fontSize:11,background:'rgba(234,88,12,.08)',border:'1px solid rgba(234,88,12,.2)',color:'var(--orange)',fontWeight:600}}>🔧 Тази кола е в сервиз за периода!</div>}
       </div>
-      <div className="form-group"><label>От дата</label><input type="date" value={toISO(f.dateFrom)} onChange={e=>u('dateFrom',fromISO(e.target.value))}/></div>
-      <div className="form-group"><label>До дата</label><input type="date" value={toISO(f.dateTo)} onChange={e=>u('dateTo',fromISO(e.target.value))}/></div>
+      <div className="form-group"><label>От дата</label><input type="date" value={bgToISO(f.dateFrom)} onChange={e=>u('dateFrom',isoToBG(e.target.value))}/></div>
+      <div className="form-group"><label>До дата</label><input type="date" value={bgToISO(f.dateTo)} onChange={e=>u('dateTo',isoToBG(e.target.value))}/></div>
       <div className="form-group"><label>Начален час</label><input type="time" value={f.timeFrom||'08:00'} onChange={e=>u('timeFrom',e.target.value)}/></div>
       <div className="form-group"><label>Краен час</label><input type="time" value={f.timeTo||'18:00'} onChange={e=>u('timeTo',e.target.value)}/></div>
       {rentalConflicts.length>0&&<div className="form-group full"><div style={{padding:'8px 12px',borderRadius:6,fontSize:12,background:'rgba(220,38,38,.1)',border:'2px solid rgba(192,57,43,.4)',color:'var(--red)',fontWeight:600}}>

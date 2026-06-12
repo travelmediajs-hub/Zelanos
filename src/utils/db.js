@@ -1,53 +1,8 @@
 import { supabase } from './supabase';
-
-/**
- * Convert camelCase to snake_case
- * @param {string} str
- * @returns {string}
- */
-function toSnake(str) {
-  return str.replace(/([A-Z])/g, '_$1').toLowerCase();
-}
-
-/**
- * Convert snake_case to camelCase
- * @param {string} str
- * @returns {string}
- */
-function toCamel(str) {
-  return str.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
-}
-
-/**
- * Convert object keys from camelCase to snake_case
- * @param {Object} obj
- * @returns {Object}
- */
-function keysToSnake(obj) {
-  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return obj;
-  const out = {};
-  for (const [k, v] of Object.entries(obj)) {
-    out[toSnake(k)] = v;
-  }
-  return out;
-}
-
-/**
- * Convert object keys from snake_case to camelCase
- * @param {Object} obj
- * @returns {Object}
- */
-function keysToCamel(obj) {
-  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return obj;
-  const out = {};
-  for (const [k, v] of Object.entries(obj)) {
-    out[toCamel(k)] = v;
-  }
-  return out;
-}
+import { toSnake, keysToSnake, keysToCamel } from './case';
 
 /** Table name mapping: state key → Supabase table */
-const TABLE_MAP = {
+export const TABLE_MAP = {
   guides: 'guides',
   fuel: 'fuel',
   stopsCarBus: 'stops_car',
@@ -59,6 +14,7 @@ const TABLE_MAP = {
   roundTrips: 'round_trips',
   catalog: 'catalog',
   carRentals: 'car_rentals',
+  serviceRecords: 'service_records',
 };
 
 /** Fields to exclude from Supabase writes (computed client-side) */
@@ -98,33 +54,36 @@ function cleanRow(row) {
 }
 
 /**
- * Load all data from Supabase
+ * Load all data from Supabase (всички таблици паралелно).
+ * При грешка за дадена таблица връща null за нея — НЕ празен масив,
+ * за да не презапишем локалните данни и бекъпа с празно при мрежов проблем.
  * @returns {Promise<Object|null>} all app data
  */
 export async function loadAllData() {
   if (!supabase) return null;
 
-  const result = {};
-  for (const [stateKey, tableName] of Object.entries(TABLE_MAP)) {
+  const entries = Object.entries(TABLE_MAP);
+  const results = await Promise.all(entries.map(async ([stateKey, tableName]) => {
     const { data, error } = await supabase
       .from(tableName)
       .select('*')
       .order('id', { ascending: true });
 
     if (error) {
-      console.error(`Error loading ${tableName}:`, error.message);
-      result[stateKey] = [];
-    } else {
-      result[stateKey] = (data || []).map(keysToCamel);
+      reportSyncError('Зареждане', tableName, error.message);
+      return [stateKey, null];
     }
-  }
+    return [stateKey, (data || []).map(keysToCamel)];
+  }));
+
+  const result = Object.fromEntries(results);
 
   // Load languages separately
-  const { data: langs } = await supabase
+  const { data: langs, error: langsError } = await supabase
     .from('tour_languages')
     .select('name')
     .order('id');
-  result.tourLanguages = langs ? langs.map(l => l.name) : [];
+  result.tourLanguages = langsError || !langs ? null : langs.map(l => l.name);
 
   return result;
 }
@@ -135,8 +94,10 @@ export async function loadAllData() {
  * @param {string} stateKey
  * @param {Array} prev - previous array
  * @param {Array} next - new array
+ * @param {Function} [onInserted] - callback(localId, dbRowCamel) след успешен insert,
+ *   за да се смени локалното genId с истинското id от базата
  */
-export async function syncDiff(stateKey, prev, next) {
+export async function syncDiff(stateKey, prev, next, onInserted) {
   if (!supabase) return;
   const tableName = TABLE_MAP[stateKey];
   if (!tableName) return;
@@ -157,12 +118,16 @@ export async function syncDiff(stateKey, prev, next) {
   for (const [id, row] of nextMap) {
     const old = prevMap.get(id);
     if (!old) {
-      // New item — insert
+      // New item — insert; после сменяме локалното id с id-то от базата,
+      // иначе следваща редакция/изтриване не уцелва реда в DB,
+      // а realtime echo-то създава дубликат на екрана.
       const cleaned = cleanRow(row);
       supabase.from(tableName).insert(cleaned).select().single().then(({ data, error }) => {
-        if (error) reportSyncError('Запис', tableName, error.message);
-        // Note: we don't update local state with DB id here because
-        // the local genId is used. On next full reload, DB ids will be used.
+        if (error) {
+          reportSyncError('Запис', tableName, error.message);
+        } else if (data && onInserted) {
+          onInserted(id, keysToCamel(data));
+        }
       });
     } else if (JSON.stringify(old) !== JSON.stringify(row)) {
       // Updated item
@@ -187,7 +152,7 @@ export async function saveLanguagesDB(langs) {
   const { error } = await supabase.from('tour_languages').insert(rows);
 
   if (error) {
-    console.error('Save languages error:', error.message);
+    reportSyncError('Запис', 'tour_languages', error.message);
     return false;
   }
   return true;

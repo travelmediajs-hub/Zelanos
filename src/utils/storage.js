@@ -35,6 +35,7 @@ export function loadAppData() {
         roundTrips: data.roundTrips || [],
         catalog: data.catalog || null,
         carRentals: data.carRentals || [],
+        serviceRecords: data.serviceRecords || [],
       };
     }
   } catch (e) {
@@ -44,7 +45,7 @@ export function loadAppData() {
     guides: [], fuel: [], stopsCarBus: [], fines: [],
     carTasks: [], stopsGuide: [], tours: [],
     vehicles: DEFAULT_VEHICLES, roundTrips: [],
-    catalog: null, carRentals: [],
+    catalog: null, carRentals: [], serviceRecords: [],
   };
 }
 
@@ -53,6 +54,20 @@ export function saveAppData(data) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch (e) {
     console.error('Failed to save data:', e);
+  }
+}
+
+/**
+ * Пази копие на текущите локални данни ПРЕДИ зареждането от базата
+ * да ги презапише. Така един лош load (празна/недостъпна база) не
+ * унищожава последното добро локално копие — то остава в zelanosDataPrev.
+ */
+export function savePrevGeneration() {
+  try {
+    const current = localStorage.getItem(STORAGE_KEY);
+    if (current) localStorage.setItem(STORAGE_KEY + 'Prev', current);
+  } catch (e) {
+    console.error('Failed to save prev generation:', e);
   }
 }
 

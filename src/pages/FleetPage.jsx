@@ -1,12 +1,11 @@
 import { useState, useMemo } from 'react'
 import { Modal, ConfirmModal } from '../components/Modal'
-import { genId, parseDate, parseDateISO, daysAgo, daysAhead, MONTHS } from '../utils/helpers'
+import { genId, parseDate, parseDateISO, presetRange, MONTHS } from '../utils/helpers'
 
-function FleetPage({tours,fuel,fines,carTasks,stopsCarBus,vehicles,setVehicles}){
+function FleetPage({tours,fuel,fines,carTasks,stopsCarBus,vehicles,setVehicles,serviceRecords,setServiceRecords}){
   const [selectedCar,setSelectedCar]=useState(null);
   const [tab,setTab]=useState('overview');
   const [serviceEditing,setServiceEditing]=useState(null);
-  const [serviceRecords,setServiceRecords]=useState([]);
   const [delServiceId,setDelServiceId]=useState(null);
   const [vehicleEditing,setVehicleEditing]=useState(null);
   const [delVehicleId,setDelVehicleId]=useState(null);
@@ -14,7 +13,7 @@ function FleetPage({tours,fuel,fines,carTasks,stopsCarBus,vehicles,setVehicles})
   const [preset,setPreset]=useState('all');
   const [dateFrom,setDateFrom]=useState('');
   const [dateTo,setDateTo]=useState('');
-  const applyPreset=(p)=>{setPreset(p);if(p==='7'){setDateFrom(daysAgo(3));setDateTo(daysAhead(4))}else if(p==='30'){setDateFrom(daysAgo(15));setDateTo(daysAhead(15))}else if(p==='90'){setDateFrom(daysAgo(45));setDateTo(daysAhead(45))}else if(p==='year'){const y=new Date().getFullYear();setDateFrom(y+'-01-01');setDateTo(y+'-12-31')}else{setDateFrom('');setDateTo('')}};
+  const applyPreset=(p)=>{setPreset(p);const r=presetRange(p);setDateFrom(r.from);setDateTo(r.to)};
   const filtered=useMemo(()=>{if(!dateFrom&&!dateTo)return tours;const from=dateFrom?parseDateISO(dateFrom):null;const to=dateTo?parseDateISO(dateTo):null;
     return tours.filter(t=>{const d=parseDate(t.date);if(!d)return false;if(from&&d<from)return false;if(to&&d>to)return false;return true})},[tours,dateFrom,dateTo]);
 
@@ -116,7 +115,7 @@ function FleetPage({tours,fuel,fines,carTasks,stopsCarBus,vehicles,setVehicles})
   const blankService={carName:'',date:'',description:'',who:'',cost:'',notes:'',type:'service',status:'',priority:''};
   const saveService=(form)=>{
     if(form.id){setServiceRecords(p=>p.map(s=>s.id===form.id?form:s))}
-    else{setServiceRecords(p=>[...p,{...form,id:'svc_'+Date.now(),carName:selectedCar.name}])};
+    else{setServiceRecords(p=>[...p,{...form,id:genId(p),carName:selectedCar.name}])};
     setServiceEditing(null);
   };
   const delService=()=>{setServiceRecords(p=>p.filter(s=>s.id!==delServiceId));setDelServiceId(null)};

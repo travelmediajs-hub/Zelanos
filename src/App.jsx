@@ -90,7 +90,7 @@ export default function App() {
       case 'guides': return <GuidesPage guides={state.guides} setGuides={state.setGuides} />;
       case 'guideDossier': return <GuideDossierPage tours={state.tours} guides={state.guides} stopsGuide={state.stopsGuide} />;
       case 'stopsGuide': return <StopsGuidePage stops={state.stopsGuide} setStops={state.setStopsGuide} />;
-      case 'fleet': return <FleetPage tours={state.tours} fuel={state.fuel} fines={state.fines} carTasks={state.carTasks} stopsCarBus={state.stopsCarBus} vehicles={state.vehicles} setVehicles={state.setVehicles} />;
+      case 'fleet': return <FleetPage tours={state.tours} fuel={state.fuel} fines={state.fines} carTasks={state.carTasks} stopsCarBus={state.stopsCarBus} vehicles={state.vehicles} setVehicles={state.setVehicles} serviceRecords={state.serviceRecords} setServiceRecords={state.setServiceRecords} />;
       case 'carRental': return <CarRentalPage rentals={state.carRentals} setRentals={state.setCarRentals} vehicles={state.vehicles} roundTrips={state.roundTrips} stopsCarBus={state.stopsCarBus} tours={state.tours} />;
       case 'roundTrips': return <RoundTripsPage roundTrips={state.roundTrips} setRoundTrips={state.setRoundTrips} vehicles={state.vehicles} guides={state.guides} tours={state.tours} carRentals={state.carRentals} stopsCarBus={state.stopsCarBus} />;
       case 'fuel': return <FuelPage fuel={state.fuel} setFuel={state.setFuel} />;

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { parseDate } from '../utils/helpers';
+import { parseDate, bgToISO, isoToBG } from '../utils/helpers';
 
 function TourForm({data,onSave,onCancel,guides,catalog,vehicles,allTours,roundTrips,stopsCarBus,tourLanguages,setTourLanguages,carRentals}){
   const[f,setF]=useState(()=>{const d={...data};if(!d.tourLanguage&&d.tour&&d.tour.includes(' - ')){const parts=d.tour.split(' - ');d.tourLanguage=parts[parts.length-1]}return d});const u=(k,v)=>setF(p=>({...p,[k]:v}));
@@ -170,7 +170,7 @@ function TourForm({data,onSave,onCancel,guides,catalog,vehicles,allTours,roundTr
       </div>
     </div>
     <div className="form-grid">
-      <div className="form-group"><label>Дата</label><input type="date" value={f.date&&f.date.includes('.')?f.date.split('.').reverse().join('-'):f.date||''} onChange={e=>{const v=e.target.value;if(v){const p=v.split('-');u('date',p[2]+'.'+p[1]+'.'+p[0])}else{u('date','')}}}/></div>
+      <div className="form-group"><label>Дата</label><input type="date" value={bgToISO(f.date)} onChange={e=>u('date',isoToBG(e.target.value))}/></div>
       <div className="form-group"><label>Час на взимане</label><input value={f.pickupTime} onChange={e=>u('pickupTime',e.target.value)}/></div>
       <div className="form-group"><label>Продавач</label><input value={f.supplier} onChange={e=>u('supplier',e.target.value)}/></div>
       <div className="form-group"><label>Booking #</label><input value={f.bookingNumber} onChange={e=>u('bookingNumber',e.target.value)}/></div>

@@ -1,20 +1,6 @@
 import { supabase } from './supabase';
-
-/**
- * Convert camelCase to snake_case
- */
-function toSnake(str) {
-  return str.replace(/([A-Z])/g, '_$1').toLowerCase();
-}
-
-function keysToSnake(obj) {
-  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return obj;
-  const out = {};
-  for (const [k, v] of Object.entries(obj)) {
-    out[toSnake(k)] = v;
-  }
-  return out;
-}
+import { toSnake, keysToSnake } from './case';
+import { TABLE_MAP } from './db';
 
 const EXCLUDE_FIELDS = new Set([
   'id', 'created_at', 'total_expenses', 'balance_eur',
@@ -48,20 +34,6 @@ function sanitizeNumericFields(row, tableName) {
   }
   return out;
 }
-
-const TABLE_MAP = {
-  guides: 'guides',
-  fuel: 'fuel',
-  stopsCarBus: 'stops_car',
-  fines: 'fines',
-  carTasks: 'car_tasks',
-  stopsGuide: 'stops_guide',
-  tours: 'tours',
-  vehicles: 'vehicles',
-  roundTrips: 'round_trips',
-  catalog: 'catalog',
-  carRentals: 'car_rentals',
-};
 
 /**
  * Migrate all localStorage data to Supabase (one-time).

@@ -163,6 +163,7 @@ create table round_trips (
   route text default '',
   notes text default '',
   days jsonb default '[]',
+  nights int default 0,
   created_at timestamptz default now()
 );
 
@@ -178,6 +179,8 @@ create table car_rentals (
   client_email text default '',
   vehicle text default '',
   price_per_day numeric default 0,
+  days int default 0,
+  total_price numeric default 0,
   notes text default '',
   created_at timestamptz default now()
 );
@@ -237,3 +240,31 @@ create policy "Allow all" on stops_guide for all using (true) with check (true);
 create policy "Allow all" on round_trips for all using (true) with check (true);
 create policy "Allow all" on car_rentals for all using (true) with check (true);
 create policy "Allow all" on tour_languages for all using (true) with check (true);
+
+-- Enable Realtime for all tables so changes propagate to all connected users
+alter publication supabase_realtime add table vehicles;
+alter publication supabase_realtime add table guides;
+alter publication supabase_realtime add table catalog;
+alter publication supabase_realtime add table tours;
+alter publication supabase_realtime add table fuel;
+alter publication supabase_realtime add table fines;
+alter publication supabase_realtime add table car_tasks;
+alter publication supabase_realtime add table stops_car;
+alter publication supabase_realtime add table stops_guide;
+alter publication supabase_realtime add table round_trips;
+alter publication supabase_realtime add table car_rentals;
+alter publication supabase_realtime add table tour_languages;
+
+-- Full replica identity so DELETE events include the old row data
+alter table tours replica identity full;
+alter table guides replica identity full;
+alter table catalog replica identity full;
+alter table vehicles replica identity full;
+alter table fuel replica identity full;
+alter table fines replica identity full;
+alter table car_tasks replica identity full;
+alter table stops_car replica identity full;
+alter table stops_guide replica identity full;
+alter table round_trips replica identity full;
+alter table car_rentals replica identity full;
+alter table tour_languages replica identity full;

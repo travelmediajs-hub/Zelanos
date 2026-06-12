@@ -65,6 +65,23 @@ const TABLE_MAP = {
 const EXCLUDE_FIELDS = new Set(['totalExpenses', 'balanceEur', 'total_expenses', 'balance_eur']);
 
 /**
+ * Report a failed Supabase write — logs AND notifies the UI.
+ * Silent failures here previously meant records looked saved on screen
+ * but never reached the database (and vanished on reload).
+ * @param {string} op - insert/update/delete
+ * @param {string} tableName
+ * @param {string} message
+ */
+function reportSyncError(op, tableName, message) {
+  console.error(`${op} ${tableName}:`, message);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('zelanos-sync-error', {
+      detail: { op, table: tableName, message },
+    }));
+  }
+}
+
+/**
  * Clean row for Supabase insert/update
  * @param {Object} row
  * @returns {Object}
@@ -131,7 +148,7 @@ export async function syncDiff(stateKey, prev, next) {
   for (const [id] of prevMap) {
     if (!nextMap.has(id)) {
       supabase.from(tableName).delete().eq('id', id).then(({ error }) => {
-        if (error) console.error(`Delete ${tableName}#${id}:`, error.message);
+        if (error) reportSyncError('Изтриване', tableName, error.message);
       });
     }
   }
@@ -143,7 +160,7 @@ export async function syncDiff(stateKey, prev, next) {
       // New item — insert
       const cleaned = cleanRow(row);
       supabase.from(tableName).insert(cleaned).select().single().then(({ data, error }) => {
-        if (error) console.error(`Insert ${tableName}:`, error.message);
+        if (error) reportSyncError('Запис', tableName, error.message);
         // Note: we don't update local state with DB id here because
         // the local genId is used. On next full reload, DB ids will be used.
       });
@@ -151,7 +168,7 @@ export async function syncDiff(stateKey, prev, next) {
       // Updated item
       const cleaned = cleanRow(row);
       supabase.from(tableName).update(cleaned).eq('id', id).then(({ error }) => {
-        if (error) console.error(`Update ${tableName}#${id}:`, error.message);
+        if (error) reportSyncError('Промяна', tableName, error.message);
       });
     }
   }

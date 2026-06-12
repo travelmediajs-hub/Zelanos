@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppState } from './hooks/useAppState';
 import { useAuth } from './hooks/useAuth';
 import LoginPage from './pages/LoginPage';
@@ -40,8 +40,32 @@ const navItems = [
 
 export default function App() {
   const [page, setPage] = useState('dashboard');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [syncError, setSyncError] = useState(null);
   const { user, loading: authLoading, signIn, signOut } = useAuth();
   const state = useAppState();
+
+  // Show failed Supabase writes — otherwise records look saved but vanish on reload
+  useEffect(() => {
+    const onSyncError = (e) => setSyncError(e.detail);
+    window.addEventListener('zelanos-sync-error', onSyncError);
+    return () => window.removeEventListener('zelanos-sync-error', onSyncError);
+  }, []);
+
+  // Close mobile menu on resize to desktop
+  useEffect(() => {
+    const handleResize = () => { if (window.innerWidth > 768) setMobileMenuOpen(false); };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileMenuOpen]);
+
+  const navigateTo = (id) => { setPage(id); setMobileMenuOpen(false); };
 
   // Show loading while checking auth
   if (authLoading) {
@@ -77,13 +101,26 @@ export default function App() {
     }
   };
 
+  const currentLabel = navItems.find(it => it.id === page)?.label || 'Dashboard';
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <div className="sidebar">
+      {/* Mobile top bar */}
+      <div className="mobile-topbar">
+        <button className="hamburger-btn" onClick={() => setMobileMenuOpen(true)} aria-label="Меню">
+          <span/><span/><span/>
+        </button>
+        <span className="mobile-topbar-title">{currentLabel}</span>
+      </div>
+
+      {/* Sidebar overlay for mobile */}
+      {mobileMenuOpen && <div className="sidebar-overlay" onClick={() => setMobileMenuOpen(false)}/>}
+
+      <div className={`sidebar${mobileMenuOpen ? ' mobile-open' : ''}`}>
         <h1><span>Zelanos Tours</span></h1>
         {navItems.map((it, i) => it.group
           ? <div key={i} className="nav-group">{it.group}</div>
-          : <div key={it.id} onClick={() => setPage(it.id)} className={'nav-item' + (page === it.id ? ' active' : '')}>
+          : <div key={it.id} onClick={() => navigateTo(it.id)} className={'nav-item' + (page === it.id ? ' active' : '')}>
               <span className="icon">{it.icon}</span><span className="label">{it.label}</span>
             </div>
         )}
@@ -97,6 +134,12 @@ export default function App() {
         </div>
       </div>
       <div className="main">
+        {syncError && (
+          <div style={{position:'fixed',top:0,left:0,right:0,zIndex:9999,background:'#dc2626',color:'#fff',padding:'10px 16px',fontSize:14,fontWeight:600,display:'flex',justifyContent:'space-between',alignItems:'center',gap:12}}>
+            <span>⚠️ ГРЕШКА ПРИ ЗАПИС В БАЗАТА ({syncError.op} — {syncError.table}): {syncError.message}. Записът НЕ е съхранен — направи снимка на този екран и кажи на Горчо!</span>
+            <button onClick={() => setSyncError(null)} style={{background:'rgba(255,255,255,.2)',border:'none',color:'#fff',borderRadius:4,padding:'4px 10px',cursor:'pointer',fontWeight:700}}>✕</button>
+          </div>
+        )}
         {state.loading
           ? <div style={{display:'flex',justifyContent:'center',alignItems:'center',height:'60vh',fontSize:18,color:'#888'}}>Зареждане...</div>
           : renderPage()}

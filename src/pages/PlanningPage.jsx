@@ -29,16 +29,23 @@ function PlanningPage({tours,setTours,carRentals,roundTrips,vehicles,guides,stop
       if(tour&&car&&car.seats){
         const maxPax=parseSeatsP(car.seats);
         const tourPax=(tour.adults||0)+(tour.children||0);
-        // Гидът заема пътническо място освен ако е и шофьор
         const gIsD=!!tour.guideIsDriver;
         const guideSeats=tour.guide&&!gIsD?1:0;
-        // Check other tours on same day with same car
-        const sameDayOther=tours.filter(t=>t.id!==tourId&&t.carNumber===carName&&t.date===tour.date);
-        const sameDayPax=sameDayOther.reduce((a,t)=>a+(t.adults||0)+(t.children||0),0);
-        const sameDayGuideSeats=sameDayOther.reduce((a,t)=>{const gd=!!t.guideIsDriver;return a+(t.guide&&!gd?1:0)},0);
-        const totalNeeded=tourPax+guideSeats+sameDayPax+sameDayGuideSeats;
+        // Only count tours in the same slot (day/evening) for seat capacity
+        const thisEvening=!!tour.isEvening;
+        const sameSlotOther=tours.filter(t=>t.id!==tourId&&t.carNumber===carName&&t.date===tour.date&&!!t.isEvening===thisEvening);
+        const sameSlotPax=sameSlotOther.reduce((a,t)=>a+(t.adults||0)+(t.children||0),0);
+        const sameSlotGuideSeats=sameSlotOther.reduce((a,t)=>{const gd=!!t.guideIsDriver;return a+(t.guide&&!gd?1:0)},0);
+        const totalNeeded=tourPax+guideSeats+sameSlotPax+sameSlotGuideSeats;
         if(maxPax>0&&totalNeeded>maxPax){
           alert('⚠️ Колата '+carName+' има '+car.seats+' места ('+maxPax+' пътнически), но са нужни '+totalNeeded+' (туристи + гид). Избери по-голяма кола!');
+          return;
+        }
+        // Prevent 2 day tours or 2 evening tours with same car
+        const slotConflict=sameSlotOther.filter(t=>t.tourStatus!=='cancelled');
+        if(slotConflict.length>0){
+          const slotName=thisEvening?'вечерен':'дневен';
+          alert('⚠️ Колата '+carName+' вече има '+slotName+' тур на тази дата!');
           return;
         }
       }
@@ -170,33 +177,44 @@ function PlanningPage({tours,setTours,carRentals,roundTrips,vehicles,guides,stop
     const dayRTList=roundTripsByDate[k]||[];
     const noCar=dayTours.filter(t=>!t.carNumber);
     const noGuide=dayTours.filter(t=>!t.guide);
-    // Busy vehicles
+    // Busy vehicles — a car is only fully busy if it has BOTH day+evening tours, or is blocked by rental/round trip
+    const carDaySlot=new Set(); // cars with a day tour
+    const carEveSlot=new Set(); // cars with an evening tour
+    dayTours.forEach(t=>{if(t.carNumber&&t.tourStatus!=='cancelled'){if(t.isEvening)carEveSlot.add(t.carNumber);else carDaySlot.add(t.carNumber)}});
     const busyCars=new Set();
-    dayTours.forEach(t=>{if(t.carNumber)busyCars.add(t.carNumber)});
     dayRentals.forEach(r=>{if(r.vehicle)busyCars.add(r.vehicle)});
     dayRoundTrips.cars.forEach(c=>busyCars.add(c));
+    // A car is fully busy only if both slots are taken
+    activeVehicles.forEach(v=>{if(carDaySlot.has(v.name)&&carEveSlot.has(v.name))busyCars.add(v.name)});
     const freeCars=activeVehicles.filter(v=>!busyCars.has(v.name));
     // Busy guides
     const busyGuides=new Set();
     dayTours.forEach(t=>{if(t.guide)busyGuides.add(t.guide)});
     dayRoundTrips.guides.forEach(g=>busyGuides.add(g));
     const freeGuides=activeGuides.filter(g=>!busyGuides.has(g.name));
-    // Conflicts: vehicles used more than once, but merged tours (same car+guide+driver) don't count
-    const carUsage={};
+    // Conflicts: a car is in conflict if it has 2+ day tours OR 2+ evening tours in the same slot
+    // A car with 1 day + 1 evening is OK (unless merged tours with same guide/driver)
     const carTourGroups={};
     dayTours.forEach(t=>{if(t.carNumber&&t.tourStatus!=='cancelled'){
       if(!carTourGroups[t.carNumber])carTourGroups[t.carNumber]=[];
       carTourGroups[t.carNumber].push(t);
     }});
+    const conflicts=[];
     Object.entries(carTourGroups).forEach(([car,grp])=>{
-      if(grp.length<=1){carUsage[car]=1;return}
-      // Check if all tours with this car share guide & driver (merged)
-      const allSameGuide=grp.every(t=>t.guide&&t.guide===grp[0].guide);
-      const allSameDriver=grp.every(t=>(t.driver||'')===(grp[0].driver||''))|| grp.every(t=>t.guideIsDriver);
-      carUsage[car]=allSameGuide&&allSameDriver?1:grp.length;
+      // Split into day and evening slots
+      const dayGrp=grp.filter(t=>!t.isEvening);
+      const eveGrp=grp.filter(t=>!!t.isEvening);
+      // Check each slot separately — merged tours (same guide+driver) don't count as conflict
+      const slotConflict=(slot)=>{
+        if(slot.length<=1)return false;
+        const allSameGuide=slot.every(t=>t.guide&&t.guide===slot[0].guide);
+        const allSameDriver=slot.every(t=>(t.driver||'')===(slot[0].driver||''))||slot.every(t=>t.guideIsDriver);
+        return !(allSameGuide&&allSameDriver);
+      };
+      if(slotConflict(dayGrp)||slotConflict(eveGrp))conflicts.push(car);
     });
-    dayRentals.forEach(r=>{if(r.vehicle){carUsage[r.vehicle]=(carUsage[r.vehicle]||0)+1}});
-    const conflicts=Object.entries(carUsage).filter(([,c])=>c>1).map(([name])=>name);
+    // Rental conflicts
+    dayRentals.forEach(r=>{if(r.vehicle&&carTourGroups[r.vehicle])conflicts.push(r.vehicle)});
     const planned=dayTours.filter(t=>isPlanned(t));
     const unplanned=dayTours.filter(t=>!isPlanned(t));
     // Free drivers (from guides who drive)
@@ -343,9 +361,14 @@ function PlanningPage({tours,setTours,carRentals,roundTrips,vehicles,guides,stop
                           const isRT=selData.dayRoundTrips.cars.has(v.name);
                           const isSvc=selData.inServiceCars.has(v.name);
                           const isFree=selData.freeCars.find(fc=>fc.id===v.id);
+                          const vHasDay=selData.dayTours.some(x=>x.carNumber===v.name&&!x.isEvening&&x.tourStatus!=='cancelled');
+                          const vHasEve=selData.dayTours.some(x=>x.carNumber===v.name&&!!x.isEvening&&x.tourStatus!=='cancelled');
                           let bg,clr,suffix;
                           if(isRT){bg='rgba(220,38,38,.05)';clr='var(--red)';suffix=' ● обиколен'}
                           else if(isSvc){bg='rgba(234,88,12,.05)';clr='var(--orange)';suffix=' ● сервиз'}
+                          else if(vHasDay&&vHasEve){bg='rgba(220,38,38,.05)';clr='var(--red)';suffix=' ● зает ден+вечер'}
+                          else if(vHasDay){bg='rgba(217,119,6,.05)';clr='var(--gold)';suffix=' ● дневен (вечерен свободен)'}
+                          else if(vHasEve){bg='rgba(139,92,246,.05)';clr='var(--purple, #8B5CF6)';suffix=' ● вечерен (дневен свободен)'}
                           else if(!isFree){bg='rgba(217,119,6,.05)';clr='var(--gold)';suffix=' ● заета'}
                           else{bg='rgba(45,138,78,.06)';clr='var(--green)';suffix=''}
                           return <div key={v.id} onClick={()=>assignCar(t.id,v.name)} style={{padding:'5px 8px',borderRadius:5,cursor:'pointer',fontSize:11,background:bg,border:'1px solid '+clr+'25',color:clr,fontWeight:isFree?500:700}} onMouseEnter={e=>e.currentTarget.style.opacity='.8'} onMouseLeave={e=>e.currentTarget.style.opacity='1'}>{v.name}{v.seats?' ('+v.seats+')':''}{suffix}</div>
@@ -480,22 +503,27 @@ function PlanningPage({tours,setTours,carRentals,roundTrips,vehicles,guides,stop
                   const isRT=selData.dayRoundTrips.cars.has(v.name);
                   const isSvc=selData.inServiceCars.has(v.name);
                   const isRental=selData.dayRentals.some(r=>r.vehicle===v.name);
-                  const isTour=selData.dayTours.some(t=>t.carNumber===v.name);
+                  const hasDay=selData.dayTours.some(t=>t.carNumber===v.name&&!t.isEvening&&t.tourStatus!=='cancelled');
+                  const hasEve=selData.dayTours.some(t=>t.carNumber===v.name&&!!t.isEvening&&t.tourStatus!=='cancelled');
                   let bg,clr,label;
                   if(isRT){bg='rgba(220,38,38,.08)';clr='var(--red)';label=' ● обиколен'}
                   else if(isSvc){bg='rgba(234,88,12,.08)';clr='var(--orange)';label=' ● сервиз'}
                   else if(isRental){bg='rgba(59,130,246,.08)';clr='#3B82F6';label=' ● наем'}
-                  else if(isTour){bg='rgba(217,119,6,.08)';clr='var(--gold)';label=' ● тур'}
+                  else if(hasDay&&hasEve){bg='rgba(220,38,38,.08)';clr='var(--red)';label=' ● ден+вечер'}
+                  else if(hasDay){bg='rgba(217,119,6,.08)';clr='var(--gold)';label=' ● дневен'}
+                  else if(hasEve){bg='rgba(139,92,246,.08)';clr='var(--purple, #8B5CF6)';label=' ● 🌙 вечерен'}
                   else{bg='rgba(45,138,78,.08)';clr='var(--green)';label=''}
                   return <span key={v.id} style={{padding:'3px 8px',borderRadius:6,background:bg,border:'1px solid '+clr+'33',fontSize:11,color:clr,fontWeight:isBusy?700:400}}>{v.name}{label}</span>
                 })}
               </div>
-              <div style={{display:'flex',gap:12,marginTop:8,fontSize:10,color:'var(--text2)'}}>
+              <div style={{display:'flex',flexWrap:'wrap',gap:12,marginTop:8,fontSize:10,color:'var(--text2)'}}>
                 <span><span style={{color:'var(--green)'}}>●</span> свободна</span>
-                <span><span style={{color:'var(--red)'}}>●</span> обиколен тур</span>
+                <span><span style={{color:'var(--red)'}}>●</span> обиколен</span>
                 <span><span style={{color:'var(--orange)'}}>●</span> сервиз</span>
                 <span><span style={{color:'#3B82F6'}}>●</span> наем</span>
-                <span><span style={{color:'var(--gold)'}}>●</span> тур</span>
+                <span><span style={{color:'var(--gold)'}}>●</span> дневен</span>
+                <span><span style={{color:'var(--purple, #8B5CF6)'}}>●</span> вечерен</span>
+                <span><span style={{color:'var(--red)'}}>●</span> ден+вечер</span>
               </div>
             </div>
 

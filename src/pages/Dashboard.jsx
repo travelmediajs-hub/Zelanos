@@ -115,7 +115,7 @@ function Dashboard({tours,guides,fuel,carTasks,vehicles,fines,stopsCarBus,stopsG
         </div>)}
       </div>
     </div>
-    <div style={{marginTop:20,display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+    <div className="dash-two-col" style={{marginTop:20,display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
       <div style={{background:'var(--card)',borderRadius:8,padding:16,border:'1px solid var(--border)'}}>
         <h3 style={{fontSize:14,marginBottom:12}}>Топ доставчици</h3>
         {(()=>{const s={};filtered.forEach(t=>{if(t.supplier)s[t.supplier]=(s[t.supplier]||0)+1});return Object.entries(s).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([k,v])=><div key={k} style={{display:'flex',justifyContent:'space-between',padding:'4px 0',fontSize:13}}><span>{k}</span><strong>{v}</strong></div>)})()}

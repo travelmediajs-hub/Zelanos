@@ -212,7 +212,7 @@ function TourForm({data,onSave,onCancel,guides,catalog,vehicles,allTours,roundTr
   </div>}
 
   {formTab==='report'&&<div>
-    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12,marginBottom:20}}>
+    <div className="form-grid" style={{gridTemplateColumns:'1fr 1fr 1fr',gap:12,marginBottom:20}}>
       <div style={{background:'var(--card2)',borderRadius:8,padding:14,textAlign:'center',border:'1px solid var(--border)'}}>
         <div style={{fontSize:12,color:'var(--text2)',marginBottom:4}}>Приход</div>
         <div style={{fontSize:22,fontWeight:700,color:'var(--green)'}}>{(f.priceToUs||0).toFixed(2)} €</div>

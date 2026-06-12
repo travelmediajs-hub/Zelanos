@@ -135,14 +135,14 @@ function ToursPage({tours,setTours,guides,catalog,vehicles,roundTrips,stopsCarBu
       <div className="stat-card"><div className="label">Разходи</div><div className="value red">{stats.exp.toFixed(2)} €</div></div>
       <div className="stat-card"><div className="label">Печалба</div><div className={`value ${stats.profit>=0?'green':'red'}`}>{stats.profit.toFixed(2)} €</div></div>
     </div>
-    <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12,flexWrap:'wrap'}}>
+    <div className="tours-toolbar" style={{display:'flex',alignItems:'center',gap:8,marginBottom:12,flexWrap:'wrap'}}>
       <button className="btn" style={{background:'#e67e22',color:'#fff',fontWeight:700,border:'none',boxShadow:'0 2px 8px rgba(230,126,34,.4)'}} onClick={()=>setEditing({...blank})}>+ Нов тур</button>
       <h2 style={{fontSize:20,fontWeight:700,color:'var(--accent)',margin:0}}>{MONTHS[month-1]} {year}</h2>
-      <div style={{marginLeft:'auto',display:'flex',gap:6,alignItems:'center',flexWrap:'wrap'}}>
-        <input className="search-box" style={{width:160,padding:'5px 8px',fontSize:12}} placeholder="Търси..." value={search} onChange={e=>setSearch(e.target.value)}/>
-        <div style={{display:'flex',gap:3,alignItems:'center',fontSize:12,color:'var(--text2)'}}>
-          <span>от</span><input type="date" className="search-box" style={{width:130,padding:'5px 6px',fontSize:12}} value={dateFrom} onChange={e=>setDateFrom(e.target.value)}/>
-          <span>до</span><input type="date" className="search-box" style={{width:130,padding:'5px 6px',fontSize:12}} value={dateTo} onChange={e=>setDateTo(e.target.value)}/>
+      <div className="tours-filters" style={{marginLeft:'auto',display:'flex',gap:6,alignItems:'center',flexWrap:'wrap'}}>
+        <input className="search-box" style={{maxWidth:160,padding:'5px 8px',fontSize:12}} placeholder="Търси..." value={search} onChange={e=>setSearch(e.target.value)}/>
+        <div className="tours-date-filters" style={{display:'flex',gap:3,alignItems:'center',fontSize:12,color:'var(--text2)',flexWrap:'wrap'}}>
+          <span>от</span><input type="date" className="search-box" style={{maxWidth:130,padding:'5px 6px',fontSize:12}} value={dateFrom} onChange={e=>setDateFrom(e.target.value)}/>
+          <span>до</span><input type="date" className="search-box" style={{maxWidth:130,padding:'5px 6px',fontSize:12}} value={dateTo} onChange={e=>setDateTo(e.target.value)}/>
           {(dateFrom||dateTo)&&<button className="btn btn-ghost btn-sm" onClick={()=>{setDateFrom('');setDateTo('')}} title="Изчисти филтър">✕</button>}
         </div>
         <button className={`btn btn-sm ${carFilter?'btn-primary':'btn-ghost'}`} onClick={()=>setCarFilter(!carFilter)} title="Покажи само турове без кола">{carFilter?'✓ ':''} Без кола</button>

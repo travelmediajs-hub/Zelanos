@@ -1,59 +1,7 @@
 import { useState, useMemo } from 'react';
 import { parseDate, parseDateISO, presetRange, MONTHS } from '../utils/helpers';
-import { supabase } from '../utils/supabase';
-import { migrateToSupabase } from '../utils/migrate';
 
 function Dashboard({tours,guides,fuel,carTasks,vehicles,fines,stopsCarBus,stopsGuide,catalog,carRentals,roundTrips}){
-  const [migrating,setMigrating]=useState(false);
-  const [migrateMsg,setMigrateMsg]=useState('');
-  const [migrateDone,setMigrateDone]=useState(false);
-
-  const handleMigrate=async(data)=>{
-    setMigrating(true);setMigrateMsg('Миграция...');
-    try{
-      const result=await migrateToSupabase(
-        data||{tours,guides,fuel,carTasks,vehicles,fines,stopsCarBus,stopsGuide,catalog,carRentals,roundTrips},
-        (key,done,total)=>setMigrateMsg(`${key}: ${done}/${total}`)
-      );
-      const summary=Object.entries(result).map(([k,v])=>
-        v.skipped?`${k}: прескочен${v.existing?' ('+v.existing+' записа)':''}`:
-        v.error?`${k}: ГРЕШКА - ${v.error}`:
-        `${k}: ✅ ${v.inserted} записа`
-      ).join('\n');
-      setMigrateMsg(summary);
-      setMigrateDone(true);
-    }catch(e){setMigrateMsg('Грешка: '+e.message)}
-    setMigrating(false);
-  };
-
-  const handleImportFile=()=>{
-    const input=document.createElement('input');
-    input.type='file';input.accept='.json';
-    input.onchange=async(e)=>{
-      const file=e.target.files[0];if(!file)return;
-      try{
-        const text=await file.text();
-        const raw=JSON.parse(text);
-        const data={
-          tours:raw.tours||[],
-          guides:raw.guides||[],
-          fuel:raw.fuel||[],
-          fines:raw.fines||[],
-          carTasks:raw.carTasks||[],
-          stopsCarBus:raw.stopsCarBus||[],
-          stopsGuide:raw.stopsGuide||[],
-          vehicles:raw.vehicles||[],
-          roundTrips:raw.roundTrips||[],
-          catalog:raw.catalog||[],
-          carRentals:raw.carRentals||[],
-        };
-        const counts=Object.entries(data).map(([k,v])=>`${k}: ${v.length}`).join(', ');
-        setMigrateMsg(`Намерени: ${counts}\nКачване...`);
-        await handleMigrate(data);
-      }catch(err){setMigrateMsg('Грешка при четене: '+err.message)}
-    };
-    input.click();
-  };
   const [preset,setPreset]=useState('all');
   const [dateFrom,setDateFrom]=useState('');
   const [dateTo,setDateTo]=useState('');
@@ -85,16 +33,6 @@ function Dashboard({tours,guides,fuel,carTasks,vehicles,fines,stopsCarBus,stopsG
         <span style={{fontSize:12,color:'var(--text2)',background:'var(--card)',padding:'4px 10px',borderRadius:4,border:'1px solid var(--border)'}}>{filtered.length} от {tours.length} тура</span>
       </div>
     </div>
-    {supabase && !migrateDone && <div style={{background:'#fffbeb',border:'1px solid #f59e0b',borderRadius:8,padding:16,marginBottom:20,display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}>
-      <span style={{fontSize:14}}>⚠️ Данните са само в браузъра. Натисни за да ги качиш в Supabase базата данни.</span>
-      <button onClick={()=>handleMigrate(null)} disabled={migrating} style={{background:'#f59e0b',color:'#fff',border:'none',padding:'8px 20px',borderRadius:6,fontWeight:700,cursor:migrating?'not-allowed':'pointer'}}>{migrating?'Мигрира...':'Качи от браузъра'}</button>
-      <button onClick={handleImportFile} disabled={migrating} style={{background:'#3b82f6',color:'#fff',border:'none',padding:'8px 20px',borderRadius:6,fontWeight:700,cursor:migrating?'not-allowed':'pointer'}}>📁 Импорт от JSON файл</button>
-      {migrateMsg && <pre style={{fontSize:12,color:'#92400e',margin:0,whiteSpace:'pre-wrap',width:'100%'}}>{migrateMsg}</pre>}
-    </div>}
-    {migrateDone && <div style={{background:'#ecfdf5',border:'1px solid #10b981',borderRadius:8,padding:16,marginBottom:20}}>
-      <span style={{fontSize:14}}>✅ Миграцията завърши!</span>
-      <pre style={{fontSize:12,color:'#065f46',margin:'8px 0 0',whiteSpace:'pre-wrap'}}>{migrateMsg}</pre>
-    </div>}
     <div className="stats-row">
       <div className="stat-card"><div className="label">Турове</div><div className="value blue">{totTours}</div></div>
       <div className="stat-card"><div className="label">Туристи</div><div className="value">{totPax}</div></div>

@@ -1,7 +1,7 @@
 /**
  * camelCase ↔ snake_case конверсия на ключове.
  * Клиентът работи в camelCase, Supabase таблиците са в snake_case.
- * Единственото място с тази логика — ползва се от db.js, migrate.js и useRealtimeSync.js.
+ * Единственото място с тази логика — ползва се от db.js и useRealtimeSync.js.
  */
 
 /**

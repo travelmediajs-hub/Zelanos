@@ -7,6 +7,17 @@ create table vehicles (
   name text not null,
   seats text default '',
   active boolean default true,
+  -- Документи и годишни такси (валидност dd.mm.yyyy като текст + цена)
+  vignette_until text default '',
+  vignette_price numeric default 0,
+  inspection_until text default '',
+  inspection_price numeric default 0,
+  insurance_go_until text default '',
+  insurance_go_price numeric default 0,
+  insurance_go_installments jsonb default '[]',
+  insurance_kasko_until text default '',
+  insurance_kasko_price numeric default 0,
+  insurance_kasko_installments jsonb default '[]',
   created_at timestamptz default now()
 );
 
@@ -190,6 +201,7 @@ create table service_records (
   id bigint generated always as identity primary key,
   car_name text default '',
   date text default '',
+  date_out text default '',
   description text default '',
   who text default '',
   cost numeric default 0,

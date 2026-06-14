@@ -4,7 +4,7 @@ import MergeCard from './MergeCard';
 // поддържа и ISO формат (yyyy-mm-dd), нужен за календара.
 import { MONTHS } from '../utils/helpers';
 
-function PlanningPage({tours,setTours,carRentals,roundTrips,vehicles,guides,stopsCarBus}){
+function PlanningPage({tours,setTours,carRentals,roundTrips,vehicles,guides,stopsCarBus,serviceRecords}){
   const now=new Date();
   const [viewMonth,setViewMonth]=useState(now.getMonth());
   const [viewYear,setViewYear]=useState(now.getFullYear());
@@ -142,23 +142,34 @@ function PlanningPage({tours,setTours,carRentals,roundTrips,vehicles,guides,stop
     return map;
   },[roundTrips]);
 
-  // Index service stops by date
+  // Index service stops by date (STOP Бус/Кола + сервизни записи от досието)
   const serviceByDate=useMemo(()=>{
     const map={};
-    (stopsCarBus||[]).forEach(st=>{
-      if(!st.vehicle||!st.startDate||!st.endDate)return;
-      const from=parseDate(st.startDate),to=parseDate(st.endDate);
-      if(!from||!to)return;
+    const mark=(vehicle,from,to)=>{
       const cur=new Date(from);
       while(cur<=to){
         const k=cur.toDateString();
         if(!map[k])map[k]=new Set();
-        map[k].add(st.vehicle);
+        map[k].add(vehicle);
         cur.setDate(cur.getDate()+1);
       }
+    };
+    (stopsCarBus||[]).forEach(st=>{
+      if(!st.vehicle||!st.startDate||!st.endDate)return;
+      const from=parseDate(st.startDate),to=parseDate(st.endDate);
+      if(from&&to)mark(st.vehicle,from,to);
+    });
+    // Сервизни записи: отворен (без дата на излизане) блокира безсрочно →
+    // разпъваме до 2 г. напред, за да покрием календара.
+    (serviceRecords||[]).forEach(sr=>{
+      if(!sr.carName)return;
+      const from=parseDate(sr.date);if(!from)return;
+      let to=parseDate(sr.dateOut);
+      if(!to){to=new Date(from);to.setFullYear(to.getFullYear()+2)}
+      mark(sr.carName,from,to);
     });
     return map;
-  },[stopsCarBus]);
+  },[stopsCarBus,serviceRecords]);
 
   const rtBlockedOnDate=useMemo(()=>{
     return (date)=>{

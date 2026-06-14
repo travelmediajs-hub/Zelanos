@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
 import { Modal, ConfirmModal } from '../components/Modal';
-import { genId, parseDate, calcDays, bgToISO, isoToBG } from '../utils/helpers';
+import { genId, parseDate, calcDays, bgToISO, isoToBG, serviceCoversDay } from '../utils/helpers';
 
-function CarRentalPage({rentals,setRentals,vehicles,roundTrips,stopsCarBus,tours}){
+function CarRentalPage({rentals,setRentals,vehicles,roundTrips,stopsCarBus,tours,serviceRecords}){
   const [search,setSearch]=useState('');const [editing,setEditing]=useState(null);const [delId,setDelId]=useState(null);
   const filtered=useMemo(()=>{const s=search.toLowerCase();return !s?rentals:rentals.filter(r=>(r.client||'').toLowerCase().includes(s)||(r.vehicle||'').toLowerCase().includes(s)||(r.dateFrom||'').includes(s))},[rentals,search]);
   const totalRev=filtered.reduce((a,r)=>a+(r.totalPrice||0),0);
@@ -37,13 +37,13 @@ function CarRentalPage({rentals,setRentals,vehicles,roundTrips,stopsCarBus,tours
         <button className="btn btn-danger btn-sm" onClick={()=>setDelId(r.id)}>✕</button></td>
     </tr>})}</tbody></table></div>
     {editing&&<Modal title={editing.id?"Редактирай наем":"Нов наем"} onClose={()=>setEditing(null)}>
-      <CarRentalForm data={editing} onSave={save} onCancel={()=>setEditing(null)} vehicles={vList} roundTrips={roundTrips} stopsCarBus={stopsCarBus} allRentals={rentals} tours={tours}/>
+      <CarRentalForm data={editing} onSave={save} onCancel={()=>setEditing(null)} vehicles={vList} roundTrips={roundTrips} stopsCarBus={stopsCarBus} allRentals={rentals} tours={tours} serviceRecords={serviceRecords}/>
     </Modal>}
     {delId&&<ConfirmModal msg="Изтрий наем?" onConfirm={del} onCancel={()=>setDelId(null)}/>}
   </div>
 }
 
-function CarRentalForm({data,onSave,onCancel,vehicles,roundTrips,stopsCarBus,allRentals,tours}){
+function CarRentalForm({data,onSave,onCancel,vehicles,roundTrips,stopsCarBus,allRentals,tours,serviceRecords}){
   const [f,setF]=useState(data);const u=(k,v)=>setF(p=>({...p,[k]:v}));
   const days=calcDays(f.dateFrom,f.dateTo||f.dateFrom);
   const timeToMin=(t)=>{if(!t)return 0;const p=t.split(':');return(parseInt(p[0])||0)*60+(parseInt(p[1])||0)};
@@ -91,18 +91,25 @@ function CarRentalForm({data,onSave,onCancel,vehicles,roundTrips,stopsCarBus,all
     return blocked;
   },[f.dateFrom,f.dateTo,roundTrips]);
   const svcBlockedCars=useMemo(()=>{
-    if(!f.dateFrom||!stopsCarBus)return new Set();
+    if(!f.dateFrom)return new Set();
     const from=parseDate(f.dateFrom),to=parseDate(f.dateTo||f.dateFrom);
     if(!from)return new Set();
     const blocked=new Set();
-    stopsCarBus.forEach(st=>{
+    (stopsCarBus||[]).forEach(st=>{
       if(!st.vehicle)return;
       const sf=parseDate(st.startDate),sto=parseDate(st.endDate);
       if(!sf||!sto)return;
       if(from<=sto&&(to||from)>=sf)blocked.add(st.vehicle);
     });
+    // Коли в сервиз (отворен запис = блокира безсрочно)
+    (serviceRecords||[]).forEach(sr=>{
+      if(!sr.carName)return;
+      const sf=parseDate(sr.date);if(!sf)return;
+      const sto=parseDate(sr.dateOut); // null = още в сервиз
+      if((to||from)>=sf&&(!sto||from<=sto))blocked.add(sr.carName);
+    });
     return blocked;
-  },[f.dateFrom,f.dateTo,stopsCarBus]);
+  },[f.dateFrom,f.dateTo,stopsCarBus,serviceRecords]);
   const total=days*(f.pricePerDay||0);
   const hasConflicts=rentalConflicts.length>0;
   return <div>

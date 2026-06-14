@@ -1,6 +1,47 @@
 import { useState, useMemo } from 'react'
 import { Modal, ConfirmModal } from '../components/Modal'
-import { genId, parseDate, parseDateISO, presetRange, MONTHS } from '../utils/helpers'
+import { genId, parseDate, parseDateISO, presetRange, MONTHS, bgToISO, isoToBG, serviceDaysInPeriod, docStatus } from '../utils/helpers'
+
+// Цветен бадж за валидност на документ
+const DOC_BADGE={valid:{cls:'badge badge-green',txt:'валидно'},soon:{cls:'badge badge-orange',txt:'изтича скоро'},expired:{cls:'badge badge-red',txt:'ИЗТЕКЛО'}};
+function DocRow({label,until,price,installments}){
+  const st=docStatus(until);
+  const b=DOC_BADGE[st];
+  const paid=(installments||[]).reduce((a,x)=>a+(parseFloat(x.amount)||0),0);
+  const hasInst=(installments||[]).length>0;
+  return <div style={{padding:'8px 0',borderBottom:'1px solid var(--border)'}}>
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}>
+      <span style={{fontWeight:600,fontSize:13}}>{label}</span>
+      <span style={{display:'flex',alignItems:'center',gap:8}}>
+        {until?<>{b&&<span className={b.cls}>{b.txt}</span>}<span style={{fontSize:12,color:'var(--text2)'}}>до {until}</span></>:<span style={{fontSize:12,color:'var(--text3)'}}>няма данни</span>}
+        <span style={{fontWeight:700,minWidth:70,textAlign:'right'}}>{(+price||0).toFixed(2)} €</span>
+      </span>
+    </div>
+    {hasInst&&<div style={{marginTop:4,fontSize:11,color:'var(--text2)'}}>
+      Вноски: платени {paid.toFixed(2)} / {(+price||0).toFixed(2)} € — {installments.map((x,i)=><span key={i} style={{marginRight:8}}>{x.date}: {(+x.amount||0).toFixed(2)}€</span>)}
+    </div>}
+  </div>;
+}
+
+// Редактор на вноски за застраховка: списък от {date, amount}
+function InstallmentsEditor({items,onChange}){
+  const list=items||[];
+  const add=()=>onChange([...list,{date:'',amount:''}]);
+  const upd=(i,k,v)=>onChange(list.map((x,j)=>j===i?{...x,[k]:v}:x));
+  const del=(i)=>onChange(list.filter((_,j)=>j!==i));
+  const paid=list.reduce((a,x)=>a+(parseFloat(x.amount)||0),0);
+  return <div>
+    {list.map((x,i)=><div key={i} style={{display:'flex',gap:6,alignItems:'center',marginBottom:6}}>
+      <input type="date" value={bgToISO(x.date)} onChange={e=>upd(i,'date',isoToBG(e.target.value))} style={{flex:1}}/>
+      <input type="number" step="0.01" placeholder="сума €" value={x.amount} onChange={e=>upd(i,'amount',e.target.value)} style={{width:110}}/>
+      <button type="button" className="btn btn-danger btn-sm" onClick={()=>del(i)}>✕</button>
+    </div>)}
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:4}}>
+      <button type="button" className="btn btn-ghost btn-sm" onClick={add}>+ Вноска</button>
+      {list.length>0&&<span style={{fontSize:11,color:'var(--text2)'}}>Платени: {paid.toFixed(2)} €</span>}
+    </div>
+  </div>;
+}
 
 function FleetPage({tours,fuel,fines,carTasks,stopsCarBus,vehicles,setVehicles,serviceRecords,setServiceRecords}){
   const [selectedCar,setSelectedCar]=useState(null);
@@ -111,14 +152,51 @@ function FleetPage({tours,fuel,fines,carTasks,stopsCarBus,vehicles,setVehicles,s
     return Object.entries(map).map(([name,d])=>({name,...d})).sort((a,b)=>b.count-a.count).slice(0,10);
   },[selectedCar]);
 
+  const vList=vehicles||[];
+
   // Service form
-  const blankService={carName:'',date:'',description:'',who:'',cost:'',notes:'',type:'service',status:'',priority:''};
+  const blankService={carName:'',date:'',dateOut:'',description:'',who:'',cost:'',notes:'',type:'service',status:'',priority:''};
   const saveService=(form)=>{
     if(form.id){setServiceRecords(p=>p.map(s=>s.id===form.id?form:s))}
     else{setServiceRecords(p=>[...p,{...form,id:genId(p),carName:selectedCar.name}])};
     setServiceEditing(null);
   };
   const delService=()=>{setServiceRecords(p=>p.filter(s=>s.id!==delServiceId));setDelServiceId(null)};
+
+  // Vehicle registry (коли + документи) — дефинирано тук, за да е достъпно
+  // и от досието (бутон „Редактирай документи"), и от списъка/регистъра.
+  const blankVehicle={name:'',seats:'',active:true,vignetteUntil:'',vignettePrice:'',inspectionUntil:'',inspectionPrice:'',insuranceGoUntil:'',insuranceGoPrice:'',insuranceGoInstallments:[],insuranceKaskoUntil:'',insuranceKaskoPrice:'',insuranceKaskoInstallments:[]};
+  const saveVehicle=(form)=>{
+    if(setVehicles){
+      if(form.id){setVehicles(p=>p.map(v=>v.id===form.id?form:v))}
+      else{setVehicles(p=>[...p,{...form,id:genId(p)}])}
+    }
+    setVehicleEditing(null);
+  };
+  const delVehicle=()=>{if(setVehicles){setVehicles(p=>p.filter(v=>v.id!==delVehicleId))};setDelVehicleId(null)};
+  const ev=(k,val)=>setVehicleEditing(p=>({...p,[k]:val}));
+  const vehicleModal=vehicleEditing&&<Modal title={vehicleEditing.id?('Кола: '+(vehicleEditing.name||'')):'Нова кола'} onClose={()=>setVehicleEditing(null)}>
+    <div><div className="form-grid">
+      <div className="form-group"><label>Име / Рег. номер</label><input value={vehicleEditing.name} onChange={e=>ev('name',e.target.value)}/></div>
+      <div className="form-group"><label>Места (напр. 8+1)</label><input value={vehicleEditing.seats} onChange={e=>ev('seats',e.target.value)}/></div>
+      <div className="form-group"><label>Активна</label><select value={vehicleEditing.active?'да':'не'} onChange={e=>ev('active',e.target.value==='да')}><option>да</option><option>не</option></select></div>
+      <div className="form-group full" style={{borderTop:'1px solid var(--border)',paddingTop:10,marginTop:4}}><strong style={{fontSize:13}}>Винетка</strong></div>
+      <div className="form-group"><label>Валидна до</label><input type="date" value={bgToISO(vehicleEditing.vignetteUntil)} onChange={e=>ev('vignetteUntil',isoToBG(e.target.value))}/></div>
+      <div className="form-group"><label>Цена (€)</label><input type="number" step="0.01" value={vehicleEditing.vignettePrice} onChange={e=>ev('vignettePrice',e.target.value)}/></div>
+      <div className="form-group full" style={{borderTop:'1px solid var(--border)',paddingTop:10,marginTop:4}}><strong style={{fontSize:13}}>Технически преглед</strong></div>
+      <div className="form-group"><label>Валиден до</label><input type="date" value={bgToISO(vehicleEditing.inspectionUntil)} onChange={e=>ev('inspectionUntil',isoToBG(e.target.value))}/></div>
+      <div className="form-group"><label>Цена (€)</label><input type="number" step="0.01" value={vehicleEditing.inspectionPrice} onChange={e=>ev('inspectionPrice',e.target.value)}/></div>
+      <div className="form-group full" style={{borderTop:'1px solid var(--border)',paddingTop:10,marginTop:4}}><strong style={{fontSize:13}}>Гражданска отговорност</strong></div>
+      <div className="form-group"><label>Валидна до</label><input type="date" value={bgToISO(vehicleEditing.insuranceGoUntil)} onChange={e=>ev('insuranceGoUntil',isoToBG(e.target.value))}/></div>
+      <div className="form-group"><label>Обща цена (€)</label><input type="number" step="0.01" value={vehicleEditing.insuranceGoPrice} onChange={e=>ev('insuranceGoPrice',e.target.value)}/></div>
+      <div className="form-group full"><label>Вноски (по избор)</label><InstallmentsEditor items={vehicleEditing.insuranceGoInstallments} onChange={v=>ev('insuranceGoInstallments',v)}/></div>
+      <div className="form-group full" style={{borderTop:'1px solid var(--border)',paddingTop:10,marginTop:4}}><strong style={{fontSize:13}}>Каско</strong></div>
+      <div className="form-group"><label>Валидно до</label><input type="date" value={bgToISO(vehicleEditing.insuranceKaskoUntil)} onChange={e=>ev('insuranceKaskoUntil',isoToBG(e.target.value))}/></div>
+      <div className="form-group"><label>Обща цена (€)</label><input type="number" step="0.01" value={vehicleEditing.insuranceKaskoPrice} onChange={e=>ev('insuranceKaskoPrice',e.target.value)}/></div>
+      <div className="form-group full"><label>Вноски (по избор)</label><InstallmentsEditor items={vehicleEditing.insuranceKaskoInstallments} onChange={v=>ev('insuranceKaskoInstallments',v)}/></div>
+    </div><div className="form-actions"><button className="btn btn-ghost" onClick={()=>setVehicleEditing(null)}>Отказ</button><button className="btn btn-primary" onClick={()=>saveVehicle(vehicleEditing)}>Запази</button></div></div>
+  </Modal>;
+  const delVehicleModal=delVehicleId&&<ConfirmModal msg="Изтрий колата от регистъра?" onConfirm={delVehicle} onCancel={()=>setDelVehicleId(null)}/>;
 
   const maxTD=Math.max(...cars.map(c=>c.tourDays),1);
 
@@ -127,6 +205,13 @@ function FleetPage({tours,fuel,fines,carTasks,stopsCarBus,vehicles,setVehicles,s
     const c=cars.find(x=>x.name===selectedCar.name)||selectedCar;
     const maxM=Math.max(...monthlyBreakdown.map(m=>m.rev),1);
     const totalServiceCost=carServices.reduce((a,s)=>a+(parseFloat(s.cost)||0),0)+carFines.reduce((a,f)=>a+(f.amountEur||0),0)+carFuel.reduce((a,f)=>a+(f.totalFuelCost||0),0);
+    // Документи на колата (от регистъра) + дни в сервиз за избрания период
+    const vehicle=vList.find(v=>v.name===c.name);
+    const docCost=vehicle?((+vehicle.vignettePrice||0)+(+vehicle.inspectionPrice||0)+(+vehicle.insuranceGoPrice||0)+(+vehicle.insuranceKaskoPrice||0)):0;
+    const periodFrom=dateFrom?parseDateISO(dateFrom):null;
+    const periodTo=dateTo?parseDateISO(dateTo):null;
+    const svcDays=serviceDaysInPeriod(serviceRecords,c.name,periodFrom,periodTo);
+    const carTotalCost=totalServiceCost+docCost;
     return <div>
       <div className="topbar">
         <div style={{display:'flex',alignItems:'center',gap:12}}>
@@ -158,8 +243,10 @@ function FleetPage({tours,fuel,fines,carTasks,stopsCarBus,vehicles,setVehicles,s
         <div className="stat-card"><div className="label">Приходи</div><div className="value green">{c.rev.toFixed(2)} €</div></div>
         <div className="stat-card"><div className="label">Разходи турове</div><div className="value red">{c.exp.toFixed(2)} €</div></div>
         <div className="stat-card"><div className="label">Печалба турове</div><div className={`value ${c.profit>=0?'green':'red'}`}>{c.profit.toFixed(2)} €</div></div>
+        <div className="stat-card"><div className="label">Дни в сервиз</div><div className={`value ${svcDays>0?'orange':''}`}>{svcDays}</div></div>
         <div className="stat-card"><div className="label">Сервиз/глоби/гориво</div><div className="value orange">{totalServiceCost.toFixed(2)} €</div></div>
-        <div className="stat-card"><div className="label">Нетна печалба</div><div className={`value ${(c.profit-totalServiceCost)>=0?'green':'red'}`}>{(c.profit-totalServiceCost).toFixed(2)} €</div></div>
+        <div className="stat-card"><div className="label">Документи/такси</div><div className="value orange">{docCost.toFixed(2)} €</div></div>
+        <div className="stat-card"><div className="label">Нетна печалба</div><div className={`value ${(c.profit-carTotalCost)>=0?'green':'red'}`}>{(c.profit-carTotalCost).toFixed(2)} €</div></div>
       </div>
       <div className="view-toggle" style={{marginBottom:16}}>
         <button className={`view-btn ${tab==='overview'?'active':''}`} onClick={()=>setTab('overview')}>Обзор</button>
@@ -209,17 +296,32 @@ function FleetPage({tours,fuel,fines,carTasks,stopsCarBus,vehicles,setVehicles,s
             {carServices.length===0&&<p style={{color:'var(--text2)',fontSize:13}}>Няма сервизни записи</p>}
           </div>
         </div>
+        <div style={{marginTop:16,background:'var(--card)',borderRadius:8,padding:16,border:'1px solid var(--border)'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+            <h3 style={{fontSize:14}}>Документи и годишни такси</h3>
+            {vehicle
+              ? <button className="btn btn-ghost btn-sm" onClick={()=>setVehicleEditing({...vehicle})}>✎ Редактирай документи</button>
+              : <span style={{fontSize:12,color:'var(--text3)'}}>Колата я няма в регистъра</span>}
+          </div>
+          {vehicle?<div>
+            <DocRow label="Винетка" until={vehicle.vignetteUntil} price={vehicle.vignettePrice}/>
+            <DocRow label="Технически преглед" until={vehicle.inspectionUntil} price={vehicle.inspectionPrice}/>
+            <DocRow label="Гражданска отговорност" until={vehicle.insuranceGoUntil} price={vehicle.insuranceGoPrice} installments={vehicle.insuranceGoInstallments}/>
+            <DocRow label="Каско" until={vehicle.insuranceKaskoUntil} price={vehicle.insuranceKaskoPrice} installments={vehicle.insuranceKaskoInstallments}/>
+            <div style={{marginTop:10,display:'flex',justifyContent:'space-between',fontSize:13,fontWeight:700}}><span>Общо документи/такси</span><span className="orange">{docCost.toFixed(2)} €</span></div>
+          </div>:<p style={{color:'var(--text2)',fontSize:13}}>За да въведеш документи, добави колата в регистъра (бутон „Регистър" в списъка).</p>}
+        </div>
       </>}
 
       {tab==='service'&&<div>
         <div className="scroll-table"><table><thead><tr><th>Дата</th><th>Описание</th><th>Кой</th><th>Приоритет</th><th>Статус</th><th>Цена €</th><th>Забележки</th><th>Източник</th><th></th></tr></thead>
-        <tbody>{carServices.map((s,i)=><tr key={i}><td>{s.date}{s.dateTo?' → '+s.dateTo:''}</td>
+        <tbody>{carServices.map((s,i)=>{const out=s.dateOut||s.dateTo;const inService=s.source==='Ръчно добавен'&&s.date&&!s.dateOut;return <tr key={i}><td style={{whiteSpace:'nowrap'}}>{s.date}{out?' → '+out:''}{inService&&<span className="badge badge-red" style={{marginLeft:6}}>в сервиз</span>}</td>
           <td><strong>{s.description}</strong></td><td>{s.who}</td>
           <td>{s.priority&&<span className={s.priority==='СПЕШНО'?'badge badge-red':s.priority==='ВАЖНО'?'badge badge-orange':'badge badge-blue'}>{s.priority}</span>}</td>
           <td><span className={s.status==='ФИНАЛ'?'badge badge-green':s.status==='STOP'?'badge badge-red':s.status==='В ПРОЦЕС'?'badge badge-yellow':'badge badge-blue'}>{s.status}</span></td>
           <td style={{textAlign:'right'}}>{s.cost||'-'}</td><td title={s.notes}>{s.notes}</td><td style={{fontSize:11,color:'var(--text2)'}}>{s.source}</td>
           <td>{s.source==='Ръчно добавен'&&<><button className="btn btn-ghost btn-sm" onClick={()=>setServiceEditing({...s})}>✎</button>{' '}<button className="btn btn-danger btn-sm" onClick={()=>setDelServiceId(s.id)}>✕</button></>}</td>
-        </tr>)}</tbody></table></div>
+        </tr>})}</tbody></table></div>
       </div>}
 
       {tab==='fuel'&&<div>
@@ -250,7 +352,9 @@ function FleetPage({tours,fuel,fines,carTasks,stopsCarBus,vehicles,setVehicles,s
 
       {serviceEditing&&<Modal title={serviceEditing.id?"Редактирай сервизен запис":"Нов сервизен запис"} onClose={()=>setServiceEditing(null)}>
         <div><div className="form-grid">
-          <div className="form-group"><label>Дата</label><input value={serviceEditing.date} onChange={e=>setServiceEditing(p=>({...p,date:e.target.value}))}/></div>
+          <div className="form-group"><label>Дата на влизане в сервиз</label><input type="date" value={bgToISO(serviceEditing.date)} onChange={e=>setServiceEditing(p=>({...p,date:isoToBG(e.target.value)}))}/></div>
+          <div className="form-group"><label>Дата на излизане</label><input type="date" value={bgToISO(serviceEditing.dateOut)} onChange={e=>setServiceEditing(p=>({...p,dateOut:isoToBG(e.target.value)}))}/>
+            <span style={{fontSize:11,color:'var(--text2)'}}>Празно = още в сервиз (колата е блокирана)</span></div>
           <div className="form-group"><label>Цена (€)</label><input type="number" step="0.01" value={serviceEditing.cost} onChange={e=>setServiceEditing(p=>({...p,cost:e.target.value}))}/></div>
           <div className="form-group full"><label>Описание</label><input value={serviceEditing.description} onChange={e=>setServiceEditing(p=>({...p,description:e.target.value}))}/></div>
           <div className="form-group"><label>Кой / Къде</label><input value={serviceEditing.who} onChange={e=>setServiceEditing(p=>({...p,who:e.target.value}))}/></div>
@@ -259,19 +363,9 @@ function FleetPage({tours,fuel,fines,carTasks,stopsCarBus,vehicles,setVehicles,s
         </div><div className="form-actions"><button className="btn btn-ghost" onClick={()=>setServiceEditing(null)}>Отказ</button><button className="btn btn-primary" onClick={()=>saveService(serviceEditing)}>Запази</button></div></div>
       </Modal>}
       {delServiceId&&<ConfirmModal msg="Изтрий този сервизен запис?" onConfirm={delService} onCancel={()=>setDelServiceId(null)}/>}
+      {vehicleModal}
     </div>
   }
-
-  // --- VEHICLE REGISTRY ---
-  const blankVehicle={name:'',seats:'',active:true};
-  const saveVehicle=(form)=>{
-    if(setVehicles){
-      if(form.id){setVehicles(p=>p.map(v=>v.id===form.id?form:v))}
-      else{setVehicles(p=>[...p,{...form,id:Math.max(0,...p.map(v=>v.id))+1}])}
-    };setVehicleEditing(null);
-  };
-  const delVehicle=()=>{if(setVehicles){setVehicles(p=>p.filter(v=>v.id!==delVehicleId))};setDelVehicleId(null)};
-  const vList=vehicles||[];
 
   // --- FLEET LIST ---
   return <div>
@@ -309,6 +403,31 @@ function FleetPage({tours,fuel,fines,carTasks,stopsCarBus,vehicles,setVehicles,s
       <td><div style={{background:'var(--card2)',borderRadius:3,height:8,overflow:'hidden'}}><div style={{width:`${(c.tourDays/maxTD)*100}%`,height:'100%',background:'var(--accent)',borderRadius:3}}/></div></td>
       <td><button className="btn btn-ghost btn-sm" onClick={e=>{e.stopPropagation();setSelectedCar(c)}}>Досие →</button></td>
     </tr>)}</tbody></table></div>
+
+    {showRegistry&&<div style={{marginTop:20}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+        <h3 style={{fontSize:15}}>Регистър коли — документи и валидности</h3>
+        <button className="btn btn-primary btn-sm" onClick={()=>setVehicleEditing({...blankVehicle})}>+ Нова кола</button>
+      </div>
+      <div className="scroll-table"><table><thead><tr>
+        <th>Кола</th><th>Места</th><th>Винетка</th><th>Тех. преглед</th><th>Гражданска</th><th>Каско</th><th style={{textAlign:'right'}}>Σ такси €</th><th></th>
+      </tr></thead>
+      <tbody>{vList.map(v=>{
+        const dc=(+v.vignettePrice||0)+(+v.inspectionPrice||0)+(+v.insuranceGoPrice||0)+(+v.insuranceKaskoPrice||0);
+        const cell=(until)=>{const st=docStatus(until);const b=DOC_BADGE[st];return until?<span className={b?b.cls:''} title={'до '+until}>{until}</span>:<span style={{color:'var(--text3)'}}>—</span>};
+        return <tr key={v.id}>
+          <td><strong>{v.name}</strong>{!v.active&&<span className="badge badge-red" style={{marginLeft:6}}>неактивна</span>}</td>
+          <td style={{color:'var(--text2)'}}>{v.seats||'-'}</td>
+          <td>{cell(v.vignetteUntil)}</td><td>{cell(v.inspectionUntil)}</td>
+          <td>{cell(v.insuranceGoUntil)}</td><td>{cell(v.insuranceKaskoUntil)}</td>
+          <td style={{textAlign:'right',fontWeight:600}}>{dc.toFixed(2)}</td>
+          <td style={{whiteSpace:'nowrap'}}><button className="btn btn-ghost btn-sm" onClick={()=>setVehicleEditing({...v})}>✎</button>{' '}<button className="btn btn-danger btn-sm" onClick={()=>setDelVehicleId(v.id)}>✕</button></td>
+        </tr>})}</tbody></table></div>
+      {vList.length===0&&<p style={{color:'var(--text2)',padding:20}}>Няма коли в регистъра. Добави с „+ Нова кола".</p>}
+    </div>}
+
+    {vehicleModal}
+    {delVehicleModal}
   </div>
 }
 

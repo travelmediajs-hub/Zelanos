@@ -68,9 +68,26 @@ export function useAppState() {
   const [serviceRecords, setServiceRecords, setServiceRecordsDirect] = useSyncedState('serviceRecords', INIT.serviceRecords || []);
   const [roundTrips, setRoundTrips, setRoundTripsDirect] = useSyncedState('roundTrips', INIT.roundTrips || []);
   const [vehicles, setVehicles, setVehiclesDirect] = useSyncedState('vehicles', INIT.vehicles);
-  const [tourLanguages, setTourLanguages] = useState(loadLanguages);
+  const [tourLanguages, setTourLanguagesRaw] = useState(loadLanguages);
   const [loading, setLoading] = useState(!!supabase);
   const [dbReady, setDbReady] = useState(!supabase);
+
+  // Езиците: разделени на "direct" (зареждане — само state) и user setter
+  // (пише в базата). КРИТИЧНО: преди се синхронизираха на ВСЯКО зареждане
+  // (delete-all + insert), което при изтекъл токен можеше да изтрие езиците.
+  // Сега запис в базата има само при реална промяна от потребител.
+  const setTourLanguagesDirect = useCallback((val) => {
+    setTourLanguagesRaw(val);
+    saveLanguagesLocal(val);
+  }, []);
+  const setTourLanguages = useCallback((updater) => {
+    setTourLanguagesRaw(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      saveLanguagesLocal(next);
+      if (supabase) saveLanguagesDB(next);
+      return next;
+    });
+  }, []);
 
   // Load from Supabase on mount — DB is always authoritative.
   // Таблица с null = грешка при зареждане → пазим локалните данни,
@@ -82,8 +99,20 @@ export function useAppState() {
     // (празна/грешна база), вчерашните данни остават възстановими.
     savePrevGeneration();
 
-    loadAllData().then(data => {
-      if (data) {
+    (async () => {
+      // Увери се, че токенът е валиден ПРЕДИ да четем — getSession в supabase-js
+      // подновява изтекъл токен. Без това при изтекъл токен зареждането връща
+      // празно, таблото мига 0 и записът на езици пада с RLS грешка.
+      let session = null;
+      try {
+        const res = await supabase.auth.getSession();
+        session = res?.data?.session || null;
+      } catch { /* офлайн/без сесия — продължаваме с локалните данни */ }
+
+      const data = await loadAllData();
+      // Прилагаме данните от базата само при валидна сесия. Иначе празен
+      // резултат (от изтекъл токен) би изтрил локалните данни на екрана.
+      if (data && session) {
         if (data.guides) setGuidesDirect(data.guides);
         if (data.fuel) setFuelDirect(data.fuel);
         if (data.stopsCarBus) setStopsCarBusDirect(data.stopsCarBus);
@@ -96,11 +125,11 @@ export function useAppState() {
         if (data.catalog) setCatalogDirect(data.catalog);
         if (data.carRentals) setCarRentalsDirect(data.carRentals);
         if (data.serviceRecords) setServiceRecordsDirect(data.serviceRecords);
-        if (data.tourLanguages?.length) setTourLanguages(data.tourLanguages);
+        if (data.tourLanguages?.length) setTourLanguagesDirect(data.tourLanguages);
       }
       setLoading(false);
       setDbReady(true);
-    });
+    })();
   }, []);
 
   // Realtime: keep state in sync when other users make changes
@@ -122,12 +151,7 @@ export function useAppState() {
 
   useRealtimeSync(realtimeSetters);
 
-  // Keep localStorage as backup/cache
-  useEffect(() => {
-    if (!dbReady) return;
-    saveLanguagesLocal(tourLanguages);
-  }, [tourLanguages, dbReady]);
-
+  // Keep localStorage as backup/cache (езиците се пазят локално в сетърите)
   useEffect(() => {
     if (!dbReady) return;
     saveAppData({
@@ -135,12 +159,6 @@ export function useAppState() {
       tours, vehicles, roundTrips, catalog, carRentals, serviceRecords
     });
   }, [guides, fuel, stopsCarBus, fines, carTasks, stopsGuide, tours, vehicles, roundTrips, catalog, carRentals, serviceRecords, dbReady]);
-
-  // Sync languages to DB when changed
-  useEffect(() => {
-    if (!dbReady || !supabase) return;
-    saveLanguagesDB(tourLanguages);
-  }, [tourLanguages, dbReady]);
 
   return {
     guides, setGuides,

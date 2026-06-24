@@ -1,6 +1,24 @@
 import { supabase } from './supabase';
 import { toSnake, keysToSnake, keysToCamel } from './case';
 
+function numberValue(v) {
+  const n = Number(v || 0);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function withComputedTourFields(row) {
+  const totalExpenses =
+    numberValue(row.expGuide) +
+    numberValue(row.expDriver) +
+    numberValue(row.expFuel) +
+    numberValue(row.expAudioGuide) +
+    numberValue(row.expEntryFees) +
+    numberValue(row.expLunch) +
+    numberValue(row.expParking);
+  const balanceEur = Math.round((numberValue(row.priceToUs) - totalExpenses) * 100) / 100;
+  return { ...row, totalExpenses, balanceEur };
+}
+
 /** Table name mapping: state key → Supabase table */
 export const TABLE_MAP = {
   guides: 'guides',
@@ -73,7 +91,8 @@ export async function loadAllData() {
       reportSyncError('Зареждане', tableName, error.message);
       return [stateKey, null];
     }
-    return [stateKey, (data || []).map(keysToCamel)];
+    const rows = (data || []).map(keysToCamel);
+    return [stateKey, stateKey === 'tours' ? rows.map(withComputedTourFields) : rows];
   }));
 
   const result = Object.fromEntries(results);

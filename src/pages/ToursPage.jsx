@@ -118,7 +118,14 @@ function ToursPage({tours,setTours,guides,catalog,vehicles,roundTrips,stopsCarBu
   const blank={month,year,monthName:MONTHS[month-1],payNote:'',supplier:'',bookingNumber:'',date:'',tour:'',name:'',clientPhone:'',clientEmail:'',adults:null,children:null,hotel:'',pickupTime:'',priceToUs:null,salePrice:null,salePriceChild:null,guide:'',driver:'',carNumber:'',expGuide:null,expDriver:null,expFuel:null,expAudioGuide:null,expEntryFees:null,expLunch:null,expParking:null,totalExpenses:null,balanceEur:null,balanceBgn:null,reservationMade:'',emailSentToGuide:'',tourType:'guide_driver',tourStatus:'reservation',notes:''};
   const save=(form)=>{
     const exp=(form.expGuide||0)+(form.expDriver||0)+(form.expFuel||0)+(form.expAudioGuide||0)+(form.expEntryFees||0)+(form.expLunch||0)+(form.expParking||0);
-    const bal=(form.priceToUs||0)-exp;const updated={...form,totalExpenses:exp,balanceEur:Math.round(bal*100)/100};
+    const bal=(form.priceToUs||0)-exp;
+    const parsedDate=parseDate(form.date);
+    const dateFields=parsedDate?{
+      month:parsedDate.getMonth()+1,
+      year:parsedDate.getFullYear(),
+      monthName:MONTHS[parsedDate.getMonth()]
+    }:{month:form.month,year:form.year,monthName:form.monthName};
+    const updated={...form,...dateFields,totalExpenses:exp,balanceEur:Math.round(bal*100)/100};
     if(form.id){setTours(p=>p.map(t=>t.id===form.id?updated:t))}else{setTours(p=>[...p,{...updated,id:genId(p)}])};setEditing(null)
   };
   const del=()=>{setTours(p=>p.filter(t=>t.id!==delId));setDelId(null)};

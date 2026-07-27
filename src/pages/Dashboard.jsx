@@ -5,6 +5,18 @@ function Dashboard({tours,guides,fuel,carTasks,vehicles,fines,stopsCarBus,stopsG
   const [preset,setPreset]=useState('all');
   const [dateFrom,setDateFrom]=useState('');
   const [dateTo,setDateTo]=useState('');
+  const [compareYears,setCompareYears]=useState(false);
+  // Сравнение по години: пълни календарни години от всички турове,
+  // независимо от избрания период — иначе сравнението е ябълки с круши
+  const yearCompare=useMemo(()=>{
+    if(!compareYears)return null;
+    const years=[...new Set(tours.map(t=>t.year).filter(Boolean))].sort((a,b)=>a-b);
+    return years.map(y=>{
+      const yt=tours.filter(t=>t.year===y);
+      const monthly=MONTHS.map((_,i)=>yt.filter(t=>t.month===i+1).reduce((a,t)=>a+(t.priceToUs||0),0));
+      return{year:y,tours:yt.length,pax:yt.reduce((a,t)=>a+(t.adults||0)+(t.children||0),0),rev:yt.reduce((a,t)=>a+(t.priceToUs||0),0),exp:yt.reduce((a,t)=>a+(t.totalExpenses||0),0),monthly};
+    });
+  },[compareYears,tours]);
   const applyPreset=(p)=>{setPreset(p);const r=presetRange(p);setDateFrom(r.from);setDateTo(r.to)};
   const filtered=useMemo(()=>{if(!dateFrom&&!dateTo)return tours;const from=dateFrom?parseDateISO(dateFrom):null;const to=dateTo?parseDateISO(dateTo):null;
     return tours.filter(t=>{const d=parseDate(t.date);if(!d)return false;if(from&&d<from)return false;if(to&&d>to)return false;return true})},[tours,dateFrom,dateTo]);
@@ -30,6 +42,10 @@ function Dashboard({tours,guides,fuel,carTasks,vehicles,fines,stopsCarBus,stopsG
           <span style={{fontSize:12,color:'var(--text2)'}}>до</span>
           <input type="date" className="search-box" style={{width:150}} value={dateTo} onChange={e=>{setDateTo(e.target.value);setPreset('')}}/>
         </div>
+        <label style={{display:'flex',alignItems:'center',gap:6,fontSize:13,fontWeight:600,cursor:'pointer',userSelect:'none',background:'var(--card)',padding:'4px 10px',borderRadius:4,border:'1px solid '+(compareYears?'var(--accent)':'var(--border)'),color:compareYears?'var(--accent)':'var(--text2)'}}>
+          <input type="checkbox" checked={compareYears} onChange={e=>setCompareYears(e.target.checked)}/>
+          📅 Сравни с минали години
+        </label>
         <span style={{fontSize:12,color:'var(--text2)',background:'var(--card)',padding:'4px 10px',borderRadius:4,border:'1px solid var(--border)'}}>{filtered.length} от {tours.length} тура</span>
       </div>
     </div>
@@ -43,6 +59,42 @@ function Dashboard({tours,guides,fuel,carTasks,vehicles,fines,stopsCarBus,stopsG
       <div className="stat-card"><div className="label">Отворени задачи коли</div><div className={`value ${openTasks?'orange':''}`}>{openTasks}</div></div>
       {(()=>{const unreported=filtered.filter(t=>{const s=t.tourStatus||'reservation';return s==='reservation'||s==='done'});return unreported.length>0?<div className="stat-card"><div className="label">Неотчетени турове</div><div className="value orange">{unreported.length}</div></div>:null})()}
     </div>
+    {compareYears&&yearCompare&&(()=>{
+      const ys=yearCompare;const n=ys.length;
+      const colorOf=(i)=>['var(--accent)','#8B5CF6','var(--orange)','#94a3b8'][n-1-i]||'#94a3b8';
+      const maxM=Math.max(...ys.flatMap(y=>y.monthly),1);
+      const pct=(cur,prev)=>prev?<span style={{fontSize:11,fontWeight:700,color:cur>=prev?'var(--green)':'var(--red)',marginLeft:6}}>{cur>=prev?'▲':'▼'} {Math.abs((cur-prev)/prev*100).toFixed(1)}%</span>:null;
+      return <div style={{marginBottom:20,background:'var(--card)',borderRadius:8,padding:20,border:'1px solid var(--border)'}}>
+        <h3 style={{marginBottom:4,fontSize:16}}>Сравнение по години</h3>
+        <p style={{fontSize:12,color:'var(--text2)',marginBottom:14}}>Пълни календарни години от всички данни, независимо от избрания период. Процентите са спрямо предишната година.</p>
+        {n===0&&<p style={{fontSize:13,color:'var(--text2)'}}>Няма данни с попълнена година.</p>}
+        {n>0&&<>
+        <div className="scroll-table"><table style={{width:'100%',fontSize:13}}>
+          <thead><tr><th style={{textAlign:'left',padding:'6px 8px'}}>Година</th><th style={{textAlign:'center',padding:'6px 8px'}}>Турове</th><th style={{textAlign:'center',padding:'6px 8px'}}>Пакс</th><th style={{textAlign:'right',padding:'6px 8px'}}>Приходи €</th><th style={{textAlign:'right',padding:'6px 8px'}}>Разходи €</th><th style={{textAlign:'right',padding:'6px 8px'}}>Печалба €</th></tr></thead>
+          <tbody>{ys.map((y,i)=>{const prev=ys[i-1];const profit=y.rev-y.exp;const prevProfit=prev?prev.rev-prev.exp:null;
+            return <tr key={y.year}>
+              <td style={{padding:'6px 8px',fontWeight:700}}><span style={{display:'inline-block',width:10,height:10,borderRadius:3,background:colorOf(i),marginRight:6,verticalAlign:'middle'}}/>{y.year}</td>
+              <td style={{textAlign:'center',padding:'6px 8px'}}>{y.tours}{prev?pct(y.tours,prev.tours):null}</td>
+              <td style={{textAlign:'center',padding:'6px 8px'}}>{y.pax}{prev?pct(y.pax,prev.pax):null}</td>
+              <td style={{textAlign:'right',padding:'6px 8px',color:'var(--green)'}}>{y.rev.toFixed(2)}{prev?pct(y.rev,prev.rev):null}</td>
+              <td style={{textAlign:'right',padding:'6px 8px',color:'var(--red)'}}>{y.exp.toFixed(2)}</td>
+              <td style={{textAlign:'right',padding:'6px 8px',fontWeight:700,color:profit>=0?'var(--green)':'var(--red)'}}>{profit.toFixed(2)}{prevProfit!=null?pct(profit,prevProfit):null}</td>
+            </tr>})}</tbody>
+        </table></div>
+        <h4 style={{margin:'18px 0 12px',fontSize:13,color:'var(--text2)'}}>ПРИХОДИ ПО МЕСЕЦИ ПО ГОДИНИ</h4>
+        <div style={{display:'flex',alignItems:'flex-end',gap:8,height:180}}>
+          {MONTHS.map((m,mi)=><div key={mi} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+            <div style={{width:'100%',display:'flex',alignItems:'flex-end',gap:2,height:150,justifyContent:'center'}}>
+              {ys.map((y,i)=><div key={y.year} title={y.year+' '+m+': '+y.monthly[mi].toFixed(2)+' €'} style={{flex:1,maxWidth:18,background:y.monthly[mi]>0?colorOf(i):'var(--card2)',borderRadius:'3px 3px 0 0',height:`${(y.monthly[mi]/maxM)*150}px`,minHeight:2,transition:'height .3s'}}/>)}
+            </div>
+            <span style={{fontSize:10,color:'var(--text2)'}}>{m.slice(0,3)}</span>
+          </div>)}
+        </div>
+        <div style={{display:'flex',gap:14,marginTop:10,flexWrap:'wrap'}}>
+          {ys.map((y,i)=><span key={y.year} style={{fontSize:12,display:'flex',alignItems:'center',gap:5}}><span style={{width:10,height:10,borderRadius:3,background:colorOf(i),display:'inline-block'}}/>{y.year}</span>)}
+        </div>
+        </>}
+      </div>})()}
     <div style={{background:'var(--card)',borderRadius:8,padding:20,border:'1px solid var(--border)'}}>
       <h3 style={{marginBottom:16,fontSize:16}}>Приходи по месеци</h3>
       <div style={{display:'flex',alignItems:'flex-end',gap:6,height:200}}>

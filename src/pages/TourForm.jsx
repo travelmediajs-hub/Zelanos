@@ -65,9 +65,15 @@ function TourForm({data,onSave,onCancel,guides,catalog,vehicles,allTours,roundTr
   const slotConflict=useMemo(()=>{
     if(!needsCar||!f.carNumber||!f.date||sameDayTours.length===0)return null;
     const sameSlot=sameDayTours.filter(t=>!!t.isEvening===thisIsEvening);
-    if(sameSlot.length>0)return thisIsEvening?'вечерен':'дневен';
-    return null;
-  },[sameDayTours,thisIsEvening,needsCar,f.carNumber,f.date]);
+    if(sameSlot.length===0)return null;
+    // Слети (обединени) турове — същият гид и шофьор — са позволени,
+    // както в календарната логика в PlanningPage
+    const grp=[f,...sameSlot];
+    const allSameGuide=grp.every(t=>t.guide&&t.guide===grp[0].guide);
+    const allSameDriver=grp.every(t=>(t.driver||'')===(grp[0].driver||''))||grp.every(t=>t.guideIsDriver);
+    if(allSameGuide&&allSameDriver)return null;
+    return thisIsEvening?'вечерен':'дневен';
+  },[sameDayTours,thisIsEvening,needsCar,f.carNumber,f.date,f.guide,f.driver,f.guideIsDriver]);
   // За капацитета считаме само турове от СЪЩИЯ слот (дневен/вечерен)
   const sameSlotTours=sameDayTours.filter(t=>!!t.isEvening===thisIsEvening);
   const sameDayPax=sameSlotTours.reduce((a,t)=>a+(t.adults||0)+(t.children||0),0);
@@ -81,9 +87,15 @@ function TourForm({data,onSave,onCancel,guides,catalog,vehicles,allTours,roundTr
   const slotBlockedCars=useMemo(()=>{
     if(!f.date||!allTours)return new Set();
     const s=new Set();
-    allTours.forEach(t=>{if(t.id===f.id||!t.carNumber||t.date!==f.date||(t.tourStatus||'reservation')==='cancelled')return;if(!!t.isEvening===thisIsEvening)s.add(t.carNumber)});
+    allTours.forEach(t=>{
+      if(t.id===f.id||!t.carNumber||t.date!==f.date||(t.tourStatus||'reservation')==='cancelled')return;
+      if(!!t.isEvening!==thisIsEvening)return;
+      // Тур със същия гид и шофьор е слят с текущия — колата не е "заета"
+      const merged=t.guide&&t.guide===f.guide&&(((t.driver||'')===(f.driver||''))||(t.guideIsDriver&&f.guideIsDriver));
+      if(!merged)s.add(t.carNumber);
+    });
     return s;
-  },[f.date,f.id,allTours,thisIsEvening]);
+  },[f.date,f.id,allTours,thisIsEvening,f.guide,f.driver,f.guideIsDriver]);
   // Check rental conflicts: day tours occupy ~08:00-17:00, evening tours ~17:00-23:00
   const rentalBlockedCars=useMemo(()=>{
     if(!f.date||!carRentals)return new Map();
@@ -108,6 +120,12 @@ function TourForm({data,onSave,onCancel,guides,catalog,vehicles,allTours,roundTr
   const isWalking=tp==='walking';
   const typedCatalog=useMemo(()=>{const s=catSearch.toLowerCase();let list=catalog||[];list=list.filter(c=>isWalking?c.needsCar===false:c.needsCar!==false);if(s)list=list.filter(c=>c.name.toLowerCase().includes(s));return list},[catalog,catSearch,isWalking]);
   const [catOpen,setCatOpen]=useState(false);
+  // Обединен тур: другите резервации в същата кола/дата/слот. Въведените
+  // разходи може да са общи за групата и да се делят пропорционално на пакса.
+  const [splitExp,setSplitExp]=useState(false);
+  const groupPax=thisPax+sameDayPax;
+  const splitShare=(t)=>groupPax>0?totalExp*((t.adults||0)+(t.children||0))/groupPax:0;
+  const splitIds=splitExp&&groupPax>0&&sameSlotTours.length>0?sameSlotTours.map(t=>t.id):null;
   return <div>
   <div style={{display:'flex',gap:12,marginBottom:16,alignItems:'center'}}>
     <div style={{flex:1}}>
@@ -226,6 +244,20 @@ function TourForm({data,onSave,onCancel,guides,catalog,vehicles,allTours,roundTr
         <div style={{fontSize:22,fontWeight:700,color:balance>=0?'var(--green)':'var(--red)'}}>{balance.toFixed(2)} €</div>
       </div>
     </div>
+    {sameSlotTours.length>0&&<div style={{marginBottom:16,padding:12,borderRadius:8,background:'rgba(139,92,246,.06)',border:'1px solid rgba(139,92,246,.3)'}}>
+      <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',fontWeight:600,fontSize:13,color:'var(--purple)',userSelect:'none'}}>
+        <input type="checkbox" checked={splitExp} onChange={e=>setSplitExp(e.target.checked)}/>
+        🔗 Обединен тур ({sameSlotTours.length+1} резервации) — раздели разходите пропорционално на пакса
+      </label>
+      {splitExp&&<div style={{marginTop:10,fontSize:12}}>
+        <div style={{color:'var(--text2)',marginBottom:6}}>Въведените суми по-долу са <strong>общи за цялата кола</strong>. При запис се разпределят по пакс ({groupPax} общо):</div>
+        {[{...f,__cur:true},...sameSlotTours].map((t,i)=><div key={i} style={{display:'flex',justifyContent:'space-between',padding:'3px 0',borderBottom:'1px solid rgba(139,92,246,.15)',fontWeight:t.__cur?700:400}}>
+          <span>{t.__cur?'Тази резервация':(t.name||'—')} ({(t.adults||0)+(t.children||0)} пакс)</span>
+          <span>{splitShare(t).toFixed(2)} €</span>
+        </div>)}
+        {groupPax===0&&<div style={{marginTop:6,color:'var(--red)',fontWeight:600}}>⚠️ Няма въведен брой туристи — разпределението не е възможно.</div>}
+      </div>}
+    </div>}
     <h4 style={{margin:'0 0 12px',color:'var(--text2)',fontSize:13}}>ЗАДЪЛЖИТЕЛНИ РАЗХОДИ</h4>
     <div className="form-grid">
       <div className="form-group"><label>Хонорар гид € {missingReport.includes('expGuide')&&<span style={{color:'var(--red)'}}>*</span>}</label><input type="number" step="0.01" value={f.expGuide||''} onChange={e=>u('expGuide',+e.target.value||null)} style={{borderColor:missingReport.includes('expGuide')?'var(--red)':''}}/></div>
@@ -259,8 +291,8 @@ function TourForm({data,onSave,onCancel,guides,catalog,vehicles,allTours,roundTr
     </div>
     <div style={{display:'flex',gap:8}}>
       <button className="btn btn-ghost" onClick={onCancel}>Затвори</button>
-      <button className="btn btn-primary" disabled={!capacityOk||!slotOk} style={{opacity:capacityOk&&slotOk?1:.5,cursor:capacityOk&&slotOk?'pointer':'not-allowed'}} onClick={()=>{if(capacityOk&&slotOk)onSave(f)}} title={!slotOk?'Колата вече има '+slotConflict+' тур на тази дата!':!capacityOk?'Капацитетът на колата е надвишен!':''}>💾 Запази</button>
-      {st!=='reported'&&st!=='cancelled'&&<button className="btn btn-primary" style={{background:canReport&&capacityOk&&slotOk?'var(--green)':'var(--border)',cursor:canReport&&capacityOk&&slotOk?'pointer':'not-allowed'}} disabled={!canReport||!capacityOk||!slotOk} onClick={()=>{if(canReport&&capacityOk&&slotOk)onSave({...f,tourStatus:'reported'})}}>📊 Отчети тура</button>}
+      <button className="btn btn-primary" disabled={!capacityOk||!slotOk} style={{opacity:capacityOk&&slotOk?1:.5,cursor:capacityOk&&slotOk?'pointer':'not-allowed'}} onClick={()=>{if(capacityOk&&slotOk)onSave(f,splitIds)}} title={!slotOk?'Колата вече има '+slotConflict+' тур на тази дата!':!capacityOk?'Капацитетът на колата е надвишен!':''}>💾 Запази</button>
+      {st!=='reported'&&st!=='cancelled'&&<button className="btn btn-primary" style={{background:canReport&&capacityOk&&slotOk?'var(--green)':'var(--border)',cursor:canReport&&capacityOk&&slotOk?'pointer':'not-allowed'}} disabled={!canReport||!capacityOk||!slotOk} onClick={()=>{if(canReport&&capacityOk&&slotOk)onSave({...f,tourStatus:'reported'},splitIds)}}>📊 Отчети тура</button>}
     </div>
   </div></div>
 }

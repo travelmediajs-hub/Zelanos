@@ -157,8 +157,12 @@ function FleetPage({tours,fuel,fines,carTasks,stopsCarBus,vehicles,setVehicles,s
   // Service form
   const blankService={carName:'',date:'',dateOut:'',description:'',who:'',cost:'',notes:'',type:'service',status:'',priority:''};
   const saveService=(form)=>{
-    if(form.id){setServiceRecords(p=>p.map(s=>s.id===form.id?form:s))}
-    else{setServiceRecords(p=>[...p,{...form,id:genId(p),carName:selectedCar.name}])};
+    // source е помощно поле от историята (няма такава колона в service_records),
+    // а cost трябва да е число/null — '' в numeric колона проваля целия запис
+    const{source,...rec}=form;
+    rec.cost=+rec.cost||null;
+    if(rec.id){setServiceRecords(p=>p.map(s=>s.id===rec.id?rec:s))}
+    else{setServiceRecords(p=>[...p,{...rec,id:genId(p),carName:selectedCar.name}])};
     setServiceEditing(null);
   };
   const delService=()=>{setServiceRecords(p=>p.filter(s=>s.id!==delServiceId));setDelServiceId(null)};
@@ -168,8 +172,11 @@ function FleetPage({tours,fuel,fines,carTasks,stopsCarBus,vehicles,setVehicles,s
   const blankVehicle={name:'',seats:'',active:true,vignetteUntil:'',vignettePrice:'',inspectionUntil:'',inspectionPrice:'',insuranceGoUntil:'',insuranceGoPrice:'',insuranceGoInstallments:[],insuranceKaskoUntil:'',insuranceKaskoPrice:'',insuranceKaskoInstallments:[]};
   const saveVehicle=(form)=>{
     if(setVehicles){
-      if(form.id){setVehicles(p=>p.map(v=>v.id===form.id?form:v))}
-      else{setVehicles(p=>[...p,{...form,id:genId(p)}])}
+      // Цените са numeric колони — '' от празен input проваля целия запис
+      const rec={...form};
+      for(const k of ['vignettePrice','inspectionPrice','insuranceGoPrice','insuranceKaskoPrice'])rec[k]=+rec[k]||null;
+      if(rec.id){setVehicles(p=>p.map(v=>v.id===rec.id?rec:v))}
+      else{setVehicles(p=>[...p,{...rec,id:genId(p)}])}
     }
     setVehicleEditing(null);
   };
@@ -182,17 +189,17 @@ function FleetPage({tours,fuel,fines,carTasks,stopsCarBus,vehicles,setVehicles,s
       <div className="form-group"><label>Активна</label><select value={vehicleEditing.active?'да':'не'} onChange={e=>ev('active',e.target.value==='да')}><option>да</option><option>не</option></select></div>
       <div className="form-group full" style={{borderTop:'1px solid var(--border)',paddingTop:10,marginTop:4}}><strong style={{fontSize:13}}>Винетка</strong></div>
       <div className="form-group"><label>Валидна до</label><input type="date" value={bgToISO(vehicleEditing.vignetteUntil)} onChange={e=>ev('vignetteUntil',isoToBG(e.target.value))}/></div>
-      <div className="form-group"><label>Цена (€)</label><input type="number" step="0.01" value={vehicleEditing.vignettePrice} onChange={e=>ev('vignettePrice',e.target.value)}/></div>
+      <div className="form-group"><label>Цена (€)</label><input type="number" step="0.01" value={vehicleEditing.vignettePrice??''} onChange={e=>ev('vignettePrice',e.target.value)}/></div>
       <div className="form-group full" style={{borderTop:'1px solid var(--border)',paddingTop:10,marginTop:4}}><strong style={{fontSize:13}}>Технически преглед</strong></div>
       <div className="form-group"><label>Валиден до</label><input type="date" value={bgToISO(vehicleEditing.inspectionUntil)} onChange={e=>ev('inspectionUntil',isoToBG(e.target.value))}/></div>
-      <div className="form-group"><label>Цена (€)</label><input type="number" step="0.01" value={vehicleEditing.inspectionPrice} onChange={e=>ev('inspectionPrice',e.target.value)}/></div>
+      <div className="form-group"><label>Цена (€)</label><input type="number" step="0.01" value={vehicleEditing.inspectionPrice??''} onChange={e=>ev('inspectionPrice',e.target.value)}/></div>
       <div className="form-group full" style={{borderTop:'1px solid var(--border)',paddingTop:10,marginTop:4}}><strong style={{fontSize:13}}>Гражданска отговорност</strong></div>
       <div className="form-group"><label>Валидна до</label><input type="date" value={bgToISO(vehicleEditing.insuranceGoUntil)} onChange={e=>ev('insuranceGoUntil',isoToBG(e.target.value))}/></div>
-      <div className="form-group"><label>Обща цена (€)</label><input type="number" step="0.01" value={vehicleEditing.insuranceGoPrice} onChange={e=>ev('insuranceGoPrice',e.target.value)}/></div>
+      <div className="form-group"><label>Обща цена (€)</label><input type="number" step="0.01" value={vehicleEditing.insuranceGoPrice??''} onChange={e=>ev('insuranceGoPrice',e.target.value)}/></div>
       <div className="form-group full"><label>Вноски (по избор)</label><InstallmentsEditor items={vehicleEditing.insuranceGoInstallments} onChange={v=>ev('insuranceGoInstallments',v)}/></div>
       <div className="form-group full" style={{borderTop:'1px solid var(--border)',paddingTop:10,marginTop:4}}><strong style={{fontSize:13}}>Каско</strong></div>
       <div className="form-group"><label>Валидно до</label><input type="date" value={bgToISO(vehicleEditing.insuranceKaskoUntil)} onChange={e=>ev('insuranceKaskoUntil',isoToBG(e.target.value))}/></div>
-      <div className="form-group"><label>Обща цена (€)</label><input type="number" step="0.01" value={vehicleEditing.insuranceKaskoPrice} onChange={e=>ev('insuranceKaskoPrice',e.target.value)}/></div>
+      <div className="form-group"><label>Обща цена (€)</label><input type="number" step="0.01" value={vehicleEditing.insuranceKaskoPrice??''} onChange={e=>ev('insuranceKaskoPrice',e.target.value)}/></div>
       <div className="form-group full"><label>Вноски (по избор)</label><InstallmentsEditor items={vehicleEditing.insuranceKaskoInstallments} onChange={v=>ev('insuranceKaskoInstallments',v)}/></div>
     </div><div className="form-actions"><button className="btn btn-ghost" onClick={()=>setVehicleEditing(null)}>Отказ</button><button className="btn btn-primary" onClick={()=>saveVehicle(vehicleEditing)}>Запази</button></div></div>
   </Modal>;
@@ -355,7 +362,7 @@ function FleetPage({tours,fuel,fines,carTasks,stopsCarBus,vehicles,setVehicles,s
           <div className="form-group"><label>Дата на влизане в сервиз</label><input type="date" value={bgToISO(serviceEditing.date)} onChange={e=>setServiceEditing(p=>({...p,date:isoToBG(e.target.value)}))}/></div>
           <div className="form-group"><label>Дата на излизане</label><input type="date" value={bgToISO(serviceEditing.dateOut)} onChange={e=>setServiceEditing(p=>({...p,dateOut:isoToBG(e.target.value)}))}/>
             <span style={{fontSize:11,color:'var(--text2)'}}>Празно = още в сервиз (колата е блокирана)</span></div>
-          <div className="form-group"><label>Цена (€)</label><input type="number" step="0.01" value={serviceEditing.cost} onChange={e=>setServiceEditing(p=>({...p,cost:e.target.value}))}/></div>
+          <div className="form-group"><label>Цена (€)</label><input type="number" step="0.01" value={serviceEditing.cost??''} onChange={e=>setServiceEditing(p=>({...p,cost:e.target.value}))}/></div>
           <div className="form-group full"><label>Описание</label><input value={serviceEditing.description} onChange={e=>setServiceEditing(p=>({...p,description:e.target.value}))}/></div>
           <div className="form-group"><label>Кой / Къде</label><input value={serviceEditing.who} onChange={e=>setServiceEditing(p=>({...p,who:e.target.value}))}/></div>
           <div className="form-group"><label>Статус</label><select value={serviceEditing.status} onChange={e=>setServiceEditing(p=>({...p,status:e.target.value}))}><option value="">-</option><option>НОВО</option><option>В ПРОЦЕС</option><option>ФИНАЛ</option></select></div>

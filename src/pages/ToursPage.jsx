@@ -116,17 +116,41 @@ function ToursPage({tours,setTours,guides,catalog,vehicles,roundTrips,stopsCarBu
     return{rev,exp,profit:rev-exp,pax,count:filtered.length}
   },[filtered]);
   const blank={month,year,monthName:MONTHS[month-1],payNote:'',supplier:'',bookingNumber:'',date:'',tour:'',name:'',clientPhone:'',clientEmail:'',adults:null,children:null,hotel:'',pickupTime:'',priceToUs:null,salePrice:null,salePriceChild:null,guide:'',driver:'',carNumber:'',expGuide:null,expDriver:null,expFuel:null,expAudioGuide:null,expEntryFees:null,expLunch:null,expParking:null,totalExpenses:null,balanceEur:null,balanceBgn:null,reservationMade:'',emailSentToGuide:'',tourType:'guide_driver',tourStatus:'reservation',notes:''};
-  const save=(form)=>{
-    const exp=(form.expGuide||0)+(form.expDriver||0)+(form.expFuel||0)+(form.expAudioGuide||0)+(form.expEntryFees||0)+(form.expLunch||0)+(form.expParking||0);
-    const bal=(form.priceToUs||0)-exp;
+  const EXP_FIELDS=['expGuide','expDriver','expFuel','expAudioGuide','expEntryFees','expLunch','expParking'];
+  const withTotals=(t)=>{const exp=EXP_FIELDS.reduce((a,k)=>a+(t[k]||0),0);return{...t,totalExpenses:exp,balanceEur:Math.round(((t.priceToUs||0)-exp)*100)/100}};
+  // splitIds: при обединен тур въведените разходи са ОБЩИ за групата —
+  // делят се пропорционално на пакса; текущият тур поема остатъка от закръглянето
+  const save=(form,splitIds)=>{
     const parsedDate=parseDate(form.date);
     const dateFields=parsedDate?{
       month:parsedDate.getMonth()+1,
       year:parsedDate.getFullYear(),
       monthName:MONTHS[parsedDate.getMonth()]
     }:{month:form.month,year:form.year,monthName:form.monthName};
-    const updated={...form,...dateFields,totalExpenses:exp,balanceEur:Math.round(bal*100)/100};
-    if(form.id){setTours(p=>p.map(t=>t.id===form.id?updated:t))}else{setTours(p=>[...p,{...updated,id:genId(p)}])};setEditing(null)
+    setTours(p=>{
+      let base=p;
+      const cur={...form,...dateFields};
+      if(splitIds&&splitIds.length){
+        const others=p.filter(t=>splitIds.includes(t.id));
+        const totalPax=[cur,...others].reduce((a,t)=>a+(t.adults||0)+(t.children||0),0);
+        if(others.length&&totalPax>0){
+          const upd={};
+          EXP_FIELDS.forEach(k=>{
+            const T=cur[k]||0;
+            let acc=0;
+            others.forEach(t=>{
+              const s=Math.round(T*((t.adults||0)+(t.children||0))/totalPax*100)/100;
+              acc+=s;(upd[t.id]=upd[t.id]||{})[k]=s||null;
+            });
+            cur[k]=Math.round((T-acc)*100)/100||null;
+          });
+          base=p.map(t=>upd[t.id]?withTotals({...t,...upd[t.id],...(cur.tourStatus==='reported'?{tourStatus:'reported'}:{})}):t);
+        }
+      }
+      const updated=withTotals(cur);
+      return updated.id?base.map(t=>t.id===updated.id?updated:t):[...base,{...updated,id:genId(base)}];
+    });
+    setEditing(null)
   };
   const del=()=>{setTours(p=>p.filter(t=>t.id!==delId));setDelId(null)};
   return <div>

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { parseDate, parseDateISO, presetRange, MONTHS } from '../utils/helpers';
+import { parseDate, parseDateISO, presetRange, fmtBG, MONTHS } from '../utils/helpers';
 
 function Dashboard({tours,guides,fuel,carTasks,vehicles,fines,stopsCarBus,stopsGuide,catalog,carRentals,roundTrips}){
   const [preset,setPreset]=useState('all');
@@ -17,6 +17,28 @@ function Dashboard({tours,guides,fuel,carTasks,vehicles,fines,stopsCarBus,stopsG
       return{year:y,tours:yt.length,pax:yt.reduce((a,t)=>a+(t.adults||0)+(t.children||0),0),rev:yt.reduce((a,t)=>a+(t.priceToUs||0),0),exp:yt.reduce((a,t)=>a+(t.totalExpenses||0),0),monthly};
     });
   },[compareYears,tours]);
+  // Сравнение на периоди: при избран период — предходният период със същата
+  // дължина + същият период през миналите години. Без период → сравнение по години.
+  const periodCompare=useMemo(()=>{
+    if(!compareYears||!dateFrom||!dateTo)return null;
+    const from=parseDateISO(dateFrom),to=parseDateISO(dateTo);
+    if(!from||!to||to<from)return null;
+    const DAY=86400000;
+    const len=Math.round((to-from)/DAY)+1;
+    const shiftY=(d,n)=>new Date(d.getFullYear()+n,d.getMonth(),d.getDate());
+    const ranges=[
+      {label:'Текущ период',from,to,current:true},
+      {label:'Предходен период ('+len+' дни)',from:new Date(from.getTime()-len*DAY),to:new Date(from.getTime()-DAY)},
+      {label:'Същият период −1 г.',from:shiftY(from,-1),to:shiftY(to,-1)},
+      {label:'Същият период −2 г.',from:shiftY(from,-2),to:shiftY(to,-2)},
+    ];
+    const rows=ranges.map(r=>{
+      const rt=tours.filter(t=>{const d=parseDate(t.date);return d&&d>=r.from&&d<=r.to});
+      return{...r,tours:rt.length,pax:rt.reduce((a,t)=>a+(t.adults||0)+(t.children||0),0),rev:rt.reduce((a,t)=>a+(t.priceToUs||0),0),exp:rt.reduce((a,t)=>a+(t.totalExpenses||0),0)};
+    });
+    // −2 г. се показва само ако там изобщо има данни
+    return rows.filter((r,i)=>i<3||r.tours>0);
+  },[compareYears,tours,dateFrom,dateTo]);
   const applyPreset=(p)=>{setPreset(p);const r=presetRange(p);setDateFrom(r.from);setDateTo(r.to)};
   const filtered=useMemo(()=>{if(!dateFrom&&!dateTo)return tours;const from=dateFrom?parseDateISO(dateFrom):null;const to=dateTo?parseDateISO(dateTo):null;
     return tours.filter(t=>{const d=parseDate(t.date);if(!d)return false;if(from&&d<from)return false;if(to&&d>to)return false;return true})},[tours,dateFrom,dateTo]);
@@ -59,7 +81,29 @@ function Dashboard({tours,guides,fuel,carTasks,vehicles,fines,stopsCarBus,stopsG
       <div className="stat-card"><div className="label">Отворени задачи коли</div><div className={`value ${openTasks?'orange':''}`}>{openTasks}</div></div>
       {(()=>{const unreported=filtered.filter(t=>{const s=t.tourStatus||'reservation';return s==='reservation'||s==='done'});return unreported.length>0?<div className="stat-card"><div className="label">Неотчетени турове</div><div className="value orange">{unreported.length}</div></div>:null})()}
     </div>
-    {compareYears&&yearCompare&&(()=>{
+    {compareYears&&periodCompare&&(()=>{
+      const rows=periodCompare;const cur=rows[0];
+      const maxRev2=Math.max(...rows.map(r=>r.rev),1);
+      const pct=(curV,base)=>base?<span style={{fontSize:11,fontWeight:700,color:curV>=base?'var(--green)':'var(--red)',marginLeft:6}}>{curV>=base?'▲':'▼'} {Math.abs((curV-base)/base*100).toFixed(1)}%</span>:null;
+      return <div style={{marginBottom:20,background:'var(--card)',borderRadius:8,padding:20,border:'1px solid var(--border)'}}>
+        <h3 style={{marginBottom:4,fontSize:16}}>Сравнение на периоди</h3>
+        <p style={{fontSize:12,color:'var(--text2)',marginBottom:14}}>Процентите показват как текущият период стои спрямо съответния минал период.</p>
+        <div className="scroll-table"><table style={{width:'100%',fontSize:13}}>
+          <thead><tr><th style={{textAlign:'left',padding:'6px 8px'}}>Период</th><th style={{textAlign:'left',padding:'6px 8px'}}>Дати</th><th style={{textAlign:'center',padding:'6px 8px'}}>Турове</th><th style={{textAlign:'center',padding:'6px 8px'}}>Пакс</th><th style={{textAlign:'right',padding:'6px 8px'}}>Приходи €</th><th style={{textAlign:'right',padding:'6px 8px'}}>Разходи €</th><th style={{textAlign:'right',padding:'6px 8px'}}>Печалба €</th><th style={{width:'18%'}}></th></tr></thead>
+          <tbody>{rows.map((r,i)=>{const profit=r.rev-r.exp;const curProfit=cur.rev-cur.exp;
+            return <tr key={i} style={{background:r.current?'rgba(79,70,229,.05)':'transparent'}}>
+              <td style={{padding:'6px 8px',fontWeight:r.current?700:600,color:r.current?'var(--accent)':'inherit'}}>{r.label}</td>
+              <td style={{padding:'6px 8px',fontSize:12,color:'var(--text2)',whiteSpace:'nowrap'}}>{fmtBG(r.from)} – {fmtBG(r.to)}</td>
+              <td style={{textAlign:'center',padding:'6px 8px'}}>{r.tours}{!r.current&&pct(cur.tours,r.tours)}</td>
+              <td style={{textAlign:'center',padding:'6px 8px'}}>{r.pax}{!r.current&&pct(cur.pax,r.pax)}</td>
+              <td style={{textAlign:'right',padding:'6px 8px',color:'var(--green)'}}>{r.rev.toFixed(2)}{!r.current&&pct(cur.rev,r.rev)}</td>
+              <td style={{textAlign:'right',padding:'6px 8px',color:'var(--red)'}}>{r.exp.toFixed(2)}</td>
+              <td style={{textAlign:'right',padding:'6px 8px',fontWeight:700,color:profit>=0?'var(--green)':'var(--red)'}}>{profit.toFixed(2)}{!r.current&&pct(curProfit,profit)}</td>
+              <td style={{padding:'6px 8px'}}><div style={{background:'var(--card2)',borderRadius:3,height:8,overflow:'hidden'}}><div style={{width:`${(r.rev/maxRev2)*100}%`,height:'100%',background:r.current?'var(--accent)':'#94a3b8',borderRadius:3}}/></div></td>
+            </tr>})}</tbody>
+        </table></div>
+      </div>})()}
+    {compareYears&&!periodCompare&&yearCompare&&(()=>{
       const ys=yearCompare;const n=ys.length;
       const colorOf=(i)=>['var(--accent)','#8B5CF6','var(--orange)','#94a3b8'][n-1-i]||'#94a3b8';
       const maxM=Math.max(...ys.flatMap(y=>y.monthly),1);

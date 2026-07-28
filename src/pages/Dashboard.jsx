@@ -139,6 +139,67 @@ function Dashboard({tours,guides,fuel,carTasks,vehicles,fines,stopsCarBus,stopsG
         </div>
         </>}
       </div>})()}
+    {compareYears&&(periodCompare||yearCompare)&&(()=>{
+      // Общи сравнителни разрези (дни от седмицата, коли, доставчици) —
+      // групите са периодите (при избран период) или календарните години
+      const period=!!periodCompare;
+      const base=period?[...periodCompare].reverse():yearCompare;
+      const gs=base.map((r,i)=>({
+        label:period?(r.current?'Текущ':r.label.startsWith('Предходен')?'Предходен':r.label.includes('−1')?'−1 г.':'−2 г.'):String(r.year),
+        current:period?!!r.current:i===base.length-1,
+        tours:period?tours.filter(t=>{const d=parseDate(t.date);return d&&d>=r.from&&d<=r.to}):tours.filter(t=>t.year===r.year),
+      }));
+      const n=gs.length;
+      const colorOf=(i)=>['var(--accent)','#8B5CF6','var(--orange)','#94a3b8'][n-1-i]||'#94a3b8';
+      const curIdx=gs.findIndex(g=>g.current);
+      const refIdx=period?gs.findIndex(g=>g.label==='−1 г.'):curIdx-1;
+      const pct=(cur,ref)=>ref?<span style={{fontSize:11,fontWeight:700,color:cur>=ref?'var(--green)':'var(--red)'}}>{cur>=ref?'▲':'▼'}{Math.abs((cur-ref)/ref*100).toFixed(0)}%</span>:null;
+      const dayNames=['Пон','Вто','Сря','Чет','Пет','Съб','Нед'];
+      const dayCounts=gs.map(g=>{const c=[0,0,0,0,0,0,0];g.tours.forEach(t=>{const d=parseDate(t.date);if(d)c[(d.getDay()+6)%7]++});return c});
+      const maxDay=Math.max(...dayCounts.flat(),1);
+      const carMap={};
+      gs.forEach((g,i)=>g.tours.forEach(t=>{const car=(t.carNumber||'').trim();if(!car||car==='пешеходен')return;
+        if(!carMap[car])carMap[car]=gs.map(()=>new Set());
+        carMap[car][i].add(t.date+'|'+(t.tour||'').replace(/ - [^-]+$/,''))}));
+      const carRows=Object.entries(carMap).map(([name,sets])=>({name,vals:sets.map(s=>s.size)}))
+        .sort((a,b)=>b.vals.reduce((x,y)=>x+y,0)-a.vals.reduce((x,y)=>x+y,0)).slice(0,10);
+      const supMap={};
+      gs.forEach((g,i)=>g.tours.forEach(t=>{if(!t.supplier)return;if(!supMap[t.supplier])supMap[t.supplier]=gs.map(()=>0);supMap[t.supplier][i]++}));
+      const supRows=Object.entries(supMap).map(([name,vals])=>({name,vals}))
+        .sort((a,b)=>b.vals.reduce((x,y)=>x+y,0)-a.vals.reduce((x,y)=>x+y,0)).slice(0,10);
+      const cmpTable=(title,rows,hint)=><div style={{background:'var(--card)',borderRadius:8,padding:16,border:'1px solid var(--border)'}}>
+        <h3 style={{fontSize:14,marginBottom:4}}>{title}</h3>
+        <p style={{fontSize:11,color:'var(--text2)',marginBottom:10}}>{hint}{refIdx>=0?' · % — '+gs[curIdx].label+' спрямо '+gs[refIdx].label:''}</p>
+        {rows.length===0?<p style={{fontSize:12,color:'var(--text2)'}}>Няма данни.</p>:
+        <div className="scroll-table"><table style={{width:'100%',fontSize:12}}>
+          <thead><tr><th style={{textAlign:'left',padding:'4px 6px'}}></th>{gs.map((g,i)=><th key={i} style={{textAlign:'center',padding:'4px 6px',color:g.current?'var(--accent)':'var(--text2)',whiteSpace:'nowrap'}}>{g.label}</th>)}<th style={{width:60}}></th></tr></thead>
+          <tbody>{rows.map(r=><tr key={r.name}>
+            <td style={{padding:'4px 6px',fontWeight:600,maxWidth:140,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}} title={r.name}>{r.name}</td>
+            {r.vals.map((v,i)=><td key={i} style={{textAlign:'center',padding:'4px 6px',fontWeight:i===curIdx?700:400}}>{v}</td>)}
+            <td style={{textAlign:'right',padding:'4px 6px',whiteSpace:'nowrap'}}>{refIdx>=0?pct(r.vals[curIdx],r.vals[refIdx]):null}</td>
+          </tr>)}</tbody>
+        </table></div>}
+      </div>;
+      return <>
+        <div style={{marginBottom:20,background:'var(--card)',borderRadius:8,padding:20,border:'1px solid var(--border)'}}>
+          <h3 style={{marginBottom:16,fontSize:16}}>Натовареност по дни от седмицата — сравнение</h3>
+          <div style={{display:'flex',alignItems:'flex-end',gap:10,height:170}}>
+            {dayNames.map((name,di)=><div key={di} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+              <div style={{width:'100%',display:'flex',alignItems:'flex-end',gap:2,height:140,justifyContent:'center'}}>
+                {gs.map((g,i)=><div key={i} title={g.label+' '+name+': '+dayCounts[i][di]+' тура'} style={{flex:1,maxWidth:16,background:dayCounts[i][di]>0?colorOf(i):'var(--card2)',borderRadius:'3px 3px 0 0',height:`${(dayCounts[i][di]/maxDay)*140}px`,minHeight:2}}/>)}
+              </div>
+              <span style={{fontSize:11,color:'var(--text2)',fontWeight:di>=5?700:400}}>{name}</span>
+            </div>)}
+          </div>
+          <div style={{display:'flex',gap:14,marginTop:10,flexWrap:'wrap'}}>
+            {gs.map((g,i)=><span key={i} style={{fontSize:12,display:'flex',alignItems:'center',gap:5}}><span style={{width:10,height:10,borderRadius:3,background:colorOf(i),display:'inline-block'}}/>{g.label}</span>)}
+          </div>
+        </div>
+        <div className="dash-two-col" style={{marginBottom:20,display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+          {cmpTable('Коли — сравнение',carRows,'Тур-дни (уникални дни с тур)')}
+          {cmpTable('Доставчици — сравнение',supRows,'Брой резервации')}
+        </div>
+      </>})()}
     <div style={{background:'var(--card)',borderRadius:8,padding:20,border:'1px solid var(--border)'}}>
       <h3 style={{marginBottom:16,fontSize:16}}>Приходи по месеци</h3>
       <div style={{display:'flex',alignItems:'flex-end',gap:6,height:200}}>

@@ -95,10 +95,17 @@ function ListView({filtered,onEdit,onDelete,carFilter,bulkSel,setBulkSel}){
   })}</tbody></table></div>
 }
 
-function ToursPage({tours,setTours,guides,catalog,vehicles,roundTrips,stopsCarBus,tourLanguages,setTourLanguages,carRentals}){
+function ToursPage({tours,setTours,guides,catalog,vehicles,roundTrips,stopsCarBus,tourLanguages,setTourLanguages,carRentals,openTarget,onOpenHandled}){
   const [year,setYear]=useState(2026);
   const [month,setMonth]=useState(new Date().getMonth()+1);
   const [search,setSearch]=useState('');const [editing,setEditing]=useState(null);const [delId,setDelId]=useState(null);const [view,setView]=useState('list');const [carFilter,setCarFilter]=useState(false);const [bulkCar,setBulkCar]=useState('');const [bulkSel,setBulkSel]=useState(new Set());const [statusFilter,setStatusFilter]=useState('all');const [dateFrom,setDateFrom]=useState('');const [dateTo,setDateTo]=useState('');
+  // Дълбока навигация от таблото: отваря конкретен тур за редакция
+  React.useEffect(()=>{
+    if(!openTarget||!openTarget.id)return;
+    const t=tours.find(x=>x.id===openTarget.id);
+    if(t){if(t.year)setYear(t.year);if(t.month)setMonth(t.month);setEditing({...t})}
+    onOpenHandled&&onOpenHandled();
+  },[openTarget]);
   const yearTours=useMemo(()=>tours.filter(t=>(t.year||2026)===year),[tours,year]);
   const monthTours=useMemo(()=>yearTours.filter(t=>t.month===month),[yearTours,month]);
   const filtered=useMemo(()=>{let list=monthTours;if(carFilter)list=list.filter(t=>!(t.carNumber||'').trim());

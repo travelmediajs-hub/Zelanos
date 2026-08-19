@@ -1,9 +1,16 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Modal, ConfirmModal } from '../components/Modal';
 import { genId, parseDate, calcDays, bgToISO, isoToBG, serviceCoversDay } from '../utils/helpers';
 
-function CarRentalPage({rentals,setRentals,vehicles,roundTrips,stopsCarBus,tours,serviceRecords}){
+function CarRentalPage({rentals,setRentals,vehicles,roundTrips,stopsCarBus,tours,serviceRecords,openTarget,onOpenHandled}){
   const [search,setSearch]=useState('');const [editing,setEditing]=useState(null);const [delId,setDelId]=useState(null);
+  // Дълбока навигация от таблото: отваря конкретен наем за редакция
+  useEffect(()=>{
+    if(!openTarget||!openTarget.id)return;
+    const r=rentals.find(x=>x.id===openTarget.id);
+    if(r)setEditing({...r});
+    onOpenHandled&&onOpenHandled();
+  },[openTarget]);
   const filtered=useMemo(()=>{const s=search.toLowerCase();return !s?rentals:rentals.filter(r=>(r.client||'').toLowerCase().includes(s)||(r.vehicle||'').toLowerCase().includes(s)||(r.dateFrom||'').includes(s))},[rentals,search]);
   const totalRev=filtered.reduce((a,r)=>a+(r.totalPrice||0),0);
   const blank={dateFrom:'',dateTo:'',timeFrom:'08:00',timeTo:'18:00',client:'',clientPhone:'',clientEmail:'',vehicle:'',pricePerDay:null,days:0,totalPrice:null,notes:''};

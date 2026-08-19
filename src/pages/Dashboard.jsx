@@ -1,7 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { parseDate, parseDateISO, presetRange, fmtBG, serviceCoversDay, MONTHS } from '../utils/helpers';
 
-function Dashboard({tours,guides,fuel,carTasks,vehicles,fines,stopsCarBus,stopsGuide,catalog,carRentals,roundTrips,serviceRecords}){
+// Приема и двата формата дати (dd.mm.yyyy и yyyy-mm-dd) — стари записи може да са ISO
+const parseAnyDate=(s)=>parseDate(s)||parseDateISO(s);
+// Сравнение на имена на коли, устойчиво на разлики в интервали/главни букви
+const sameCar=(a,b)=>String(a||'').trim().toLowerCase()===String(b||'').trim().toLowerCase();
+
+function Dashboard({tours,guides,fuel,carTasks,vehicles,fines,stopsCarBus,stopsGuide,catalog,carRentals,roundTrips,serviceRecords,onOpenRecord}){
   const [preset,setPreset]=useState('all');
   const [dateFrom,setDateFrom]=useState('');
   const [dateTo,setDateTo]=useState('');
@@ -15,27 +20,27 @@ function Dashboard({tours,guides,fuel,carTasks,vehicles,fines,stopsCarBus,stopsG
       const days=ganttDays.map(day=>{
         const segs=[];
         tours.forEach(t=>{
-          if((t.carNumber||'').trim()!==v.name||(t.tourStatus||'reservation')==='cancelled')return;
-          const d=parseDate(t.date);
-          if(d&&d.getTime()===day.getTime())segs.push({type:t.isEvening?'evening':'day',txt:(t.isEvening?'🌙 Вечерен тур: ':'☀️ Дневен тур: ')+(t.tour||'')+(t.pickupTime?' ('+t.pickupTime+')':'')});
+          if(!sameCar(t.carNumber,v.name)||(t.tourStatus||'reservation')==='cancelled')return;
+          const d=parseAnyDate(t.date);
+          if(d&&d.getTime()===day.getTime())segs.push({type:t.isEvening?'evening':'day',txt:(t.isEvening?'🌙 Вечерен тур: ':'☀️ Дневен тур: ')+(t.tour||'')+(t.pickupTime?' ('+t.pickupTime+')':''),page:'tours',target:{id:t.id}});
         });
         (roundTrips||[]).forEach(rt=>{
-          if(rt.vehicle!==v.name||rt.status==='cancelled')return;
-          const f=parseDate(rt.dateFrom),to=parseDate(rt.dateTo);
-          if(f&&to&&day>=f&&day<=to)segs.push({type:'rt',txt:'🧭 Обиколен тур'+(rt.name?': '+rt.name:'')});
+          if(!sameCar(rt.vehicle,v.name)||rt.status==='cancelled')return;
+          const f=parseAnyDate(rt.dateFrom),to=parseAnyDate(rt.dateTo);
+          if(f&&to&&day>=f&&day<=to)segs.push({type:'rt',txt:'🧭 Обиколен тур'+(rt.name?': '+rt.name:''),page:'roundTrips',target:{id:rt.id}});
         });
         (carRentals||[]).forEach(r=>{
-          if(r.vehicle!==v.name)return;
-          const f=parseDate(r.dateFrom),to=parseDate(r.dateTo||r.dateFrom);
-          if(f&&to&&day>=f&&day<=to)segs.push({type:'rental',txt:'🔑 Наем'+(r.client?': '+r.client:'')+(r.timeFrom?' '+r.timeFrom+'–'+(r.timeTo||''):'')});
+          if(!sameCar(r.vehicle,v.name))return;
+          const f=parseAnyDate(r.dateFrom),to=parseAnyDate(r.dateTo||r.dateFrom);
+          if(f&&to&&day>=f&&day<=to)segs.push({type:'rental',txt:'🔑 Наем'+(r.client?': '+r.client:'')+(r.timeFrom?' '+r.timeFrom+'–'+(r.timeTo||''):''),page:'carRental',target:{id:r.id}});
         });
         (serviceRecords||[]).forEach(sr=>{
-          if(sr.carName===v.name&&serviceCoversDay(sr,day))segs.push({type:'service',txt:'🔧 Сервиз'+(sr.description?': '+sr.description:'')});
+          if(sameCar(sr.carName,v.name)&&serviceCoversDay(sr,day))segs.push({type:'service',txt:'🔧 Сервиз'+(sr.description?': '+sr.description:''),page:'fleet',target:{car:v.name}});
         });
         (stopsCarBus||[]).forEach(s=>{
-          if((s.vehicle||'')!==v.name)return;
-          const f=parseDate(s.startDate),to=parseDate(s.endDate);
-          if(f&&to&&day>=f&&day<=to)segs.push({type:'service',txt:'⛔ STOP'+(s.who?': '+s.who:'')});
+          if(!sameCar(s.vehicle,v.name))return;
+          const f=parseAnyDate(s.startDate),to=parseAnyDate(s.endDate);
+          if(f&&to&&day>=f&&day<=to)segs.push({type:'service',txt:'⛔ STOP'+(s.who?': '+s.who:''),page:'fleet',target:{car:v.name}});
         });
         return segs;
       });
@@ -139,8 +144,8 @@ function Dashboard({tours,guides,fuel,carTasks,vehicles,fines,stopsCarBus,stopsG
             {ganttRows.map(r=><React.Fragment key={r.name}>
               <div style={{fontSize:12,fontWeight:600,display:'flex',alignItems:'center',gap:4,overflow:'hidden',whiteSpace:'nowrap',textOverflow:'ellipsis'}} title={r.name+(r.seats?' ('+r.seats+')':'')}>{r.name}</div>
               {r.days.map((segs,i)=>{const isToday=ganttDays[i].getTime()===today.getTime();
-                return <div key={i} title={segs.length?segs.map(s=>s.txt).join('\n'):'Свободна'} style={{height:26,borderRadius:4,display:'flex',flexDirection:'column',gap:1,padding:1,background:isToday?'rgba(79,70,229,.08)':'var(--card2)',cursor:segs.length?'help':'default'}}>
-                  {segs.slice(0,3).map((s,j)=><div key={j} style={{flex:1,borderRadius:2,background:COLORS[s.type]||'var(--text2)'}}/>)}
+                return <div key={i} title={segs.length?undefined:'Свободна'} style={{height:26,borderRadius:4,display:'flex',flexDirection:'column',gap:1,padding:1,background:isToday?'rgba(79,70,229,.08)':'var(--card2)'}}>
+                  {segs.slice(0,3).map((s,j)=><div key={j} title={s.txt+'\n(клик за отваряне)'} onClick={()=>onOpenRecord&&onOpenRecord(s.page,s.target)} style={{flex:1,borderRadius:2,background:COLORS[s.type]||'var(--text2)',cursor:'pointer'}}/>)}
                 </div>})}
             </React.Fragment>)}
           </div>

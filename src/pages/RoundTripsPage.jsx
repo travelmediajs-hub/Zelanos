@@ -3,10 +3,17 @@ import { Modal, ConfirmModal } from '../components/Modal';
 import { genId, parseDate, MONTHS } from '../utils/helpers';
 import RoundTripForm from './RoundTripForm';
 
-function RoundTripsPage({roundTrips,setRoundTrips,vehicles,guides,tours,carRentals,stopsCarBus}){
+function RoundTripsPage({roundTrips,setRoundTrips,vehicles,guides,tours,carRentals,stopsCarBus,openTarget,onOpenHandled}){
   const [search,setSearch]=useState('');
   const [editing,setEditing]=useState(null);
   const [delId,setDelId]=useState(null);
+  // Дълбока навигация от таблото: отваря конкретен обиколен тур за редакция
+  React.useEffect(()=>{
+    if(!openTarget||!openTarget.id)return;
+    const rt=roundTrips.find(x=>x.id===openTarget.id);
+    if(rt)setEditing({...rt});
+    onOpenHandled&&onOpenHandled();
+  },[openTarget]);
   const [viewMode,setViewMode]=useState('list');
   
   const filtered=useMemo(()=>{

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Modal, ConfirmModal } from '../components/Modal'
 import { genId, parseDate, parseDateISO, presetRange, MONTHS, bgToISO, isoToBG, serviceDaysInPeriod, docStatus } from '../utils/helpers'
 
@@ -43,7 +43,7 @@ function InstallmentsEditor({items,onChange}){
   </div>;
 }
 
-function FleetPage({tours,fuel,fines,carTasks,stopsCarBus,vehicles,setVehicles,serviceRecords,setServiceRecords}){
+function FleetPage({tours,fuel,fines,carTasks,stopsCarBus,vehicles,setVehicles,serviceRecords,setServiceRecords,openTarget,onOpenHandled}){
   const [selectedCar,setSelectedCar]=useState(null);
   const [tab,setTab]=useState('overview');
   const [serviceEditing,setServiceEditing]=useState(null);
@@ -84,6 +84,16 @@ function FleetPage({tours,fuel,fines,carTasks,stopsCarBus,vehicles,setVehicles,s
     fuel.forEach(fl=>{const c=(fl.vehicle||'').trim();if(c&&!map[c])map[c]={name:c,tourDays:new Set(),bookings:0,pax:0,rev:0,exp:0,expGuide:0,expDriver:0,expFuel:0,expOther:0,tours:[]}});
     return Object.values(map).map(c=>({...c,tourDays:c.tourDays.size,profit:c.rev-c.exp})).sort((a,b)=>b.tourDays-a.tourDays);
   },[filtered,carTasks,fuel]);
+
+  // Дълбока навигация от таблото: отваря досието на конкретна кола.
+  // Кола без нито един тур/задача/зареждане я няма в cars → минимален обект.
+  useEffect(()=>{
+    if(!openTarget||!openTarget.car)return;
+    const c=cars.find(x=>x.name===openTarget.car)
+      ||{name:openTarget.car,tourDays:0,bookings:0,pax:0,rev:0,exp:0,expGuide:0,expDriver:0,expFuel:0,expOther:0,profit:0,tours:[]};
+    setSelectedCar(c);
+    onOpenHandled&&onOpenHandled();
+  },[openTarget,cars]);
 
   // Service records for selected car: from carTasks + stopsCarBus + user-added
   const carServices=useMemo(()=>{

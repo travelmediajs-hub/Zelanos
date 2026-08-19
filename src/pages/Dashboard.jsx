@@ -1,11 +1,47 @@
-import { useState, useMemo } from 'react';
-import { parseDate, parseDateISO, presetRange, fmtBG, MONTHS } from '../utils/helpers';
+import React, { useState, useMemo } from 'react';
+import { parseDate, parseDateISO, presetRange, fmtBG, serviceCoversDay, MONTHS } from '../utils/helpers';
 
-function Dashboard({tours,guides,fuel,carTasks,vehicles,fines,stopsCarBus,stopsGuide,catalog,carRentals,roundTrips}){
+function Dashboard({tours,guides,fuel,carTasks,vehicles,fines,stopsCarBus,stopsGuide,catalog,carRentals,roundTrips,serviceRecords}){
   const [preset,setPreset]=useState('all');
   const [dateFrom,setDateFrom]=useState('');
   const [dateTo,setDateTo]=useState('');
   const [compareYears,setCompareYears]=useState(false);
+  // Гант "Заетост на колите": прозорец от GANTT_DAYS дни, местим с ‹ › по седмица
+  const GANTT_DAYS=14;
+  const [ganttStart,setGanttStart]=useState(()=>{const d=new Date();d.setHours(0,0,0,0);return d});
+  const ganttDays=useMemo(()=>Array.from({length:GANTT_DAYS},(_,i)=>new Date(ganttStart.getFullYear(),ganttStart.getMonth(),ganttStart.getDate()+i)),[ganttStart]);
+  const ganttRows=useMemo(()=>{
+    return (vehicles||[]).filter(v=>v.active).map(v=>{
+      const days=ganttDays.map(day=>{
+        const segs=[];
+        tours.forEach(t=>{
+          if((t.carNumber||'').trim()!==v.name||(t.tourStatus||'reservation')==='cancelled')return;
+          const d=parseDate(t.date);
+          if(d&&d.getTime()===day.getTime())segs.push({type:t.isEvening?'evening':'day',txt:(t.isEvening?'🌙 Вечерен тур: ':'☀️ Дневен тур: ')+(t.tour||'')+(t.pickupTime?' ('+t.pickupTime+')':'')});
+        });
+        (roundTrips||[]).forEach(rt=>{
+          if(rt.vehicle!==v.name||rt.status==='cancelled')return;
+          const f=parseDate(rt.dateFrom),to=parseDate(rt.dateTo);
+          if(f&&to&&day>=f&&day<=to)segs.push({type:'rt',txt:'🧭 Обиколен тур'+(rt.name?': '+rt.name:'')});
+        });
+        (carRentals||[]).forEach(r=>{
+          if(r.vehicle!==v.name)return;
+          const f=parseDate(r.dateFrom),to=parseDate(r.dateTo||r.dateFrom);
+          if(f&&to&&day>=f&&day<=to)segs.push({type:'rental',txt:'🔑 Наем'+(r.client?': '+r.client:'')+(r.timeFrom?' '+r.timeFrom+'–'+(r.timeTo||''):'')});
+        });
+        (serviceRecords||[]).forEach(sr=>{
+          if(sr.carName===v.name&&serviceCoversDay(sr,day))segs.push({type:'service',txt:'🔧 Сервиз'+(sr.description?': '+sr.description:'')});
+        });
+        (stopsCarBus||[]).forEach(s=>{
+          if((s.vehicle||'')!==v.name)return;
+          const f=parseDate(s.startDate),to=parseDate(s.endDate);
+          if(f&&to&&day>=f&&day<=to)segs.push({type:'service',txt:'⛔ STOP'+(s.who?': '+s.who:'')});
+        });
+        return segs;
+      });
+      return{name:v.name,seats:v.seats,days};
+    });
+  },[vehicles,tours,roundTrips,carRentals,serviceRecords,stopsCarBus,ganttDays]);
   // Сравнение по години: пълни календарни години от всички турове,
   // независимо от избрания период — иначе сравнението е ябълки с круши
   const yearCompare=useMemo(()=>{
@@ -71,6 +107,49 @@ function Dashboard({tours,guides,fuel,carTasks,vehicles,fines,stopsCarBus,stopsG
         <span style={{fontSize:12,color:'var(--text2)',background:'var(--card)',padding:'4px 10px',borderRadius:4,border:'1px solid var(--border)'}}>{filtered.length} от {tours.length} тура</span>
       </div>
     </div>
+    {(()=>{
+      const today=new Date();today.setHours(0,0,0,0);
+      const COLORS={day:'var(--accent)',evening:'#8B5CF6',rt:'var(--green)',rental:'var(--orange)',service:'var(--red)'};
+      const LEGEND=[['day','Дневен тур'],['evening','Вечерен тур'],['rt','Обиколен тур'],['rental','Наем'],['service','Сервиз/STOP']];
+      const DOW=['Нд','Пн','Вт','Ср','Чт','Пт','Сб'];
+      const todayIdx=ganttDays.findIndex(d=>d.getTime()===today.getTime());
+      const freeToday=todayIdx>=0?ganttRows.filter(r=>r.days[todayIdx].length===0).length:null;
+      const shift=(n)=>setGanttStart(p=>new Date(p.getFullYear(),p.getMonth(),p.getDate()+n));
+      const resetToday=()=>{const d=new Date();d.setHours(0,0,0,0);setGanttStart(d)};
+      return <div style={{marginBottom:20,background:'var(--card)',borderRadius:8,padding:16,border:'1px solid var(--border)'}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10,flexWrap:'wrap',gap:8}}>
+          <h3 style={{fontSize:16}}>🚐 Заетост на колите</h3>
+          <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
+            {freeToday!=null&&<span style={{fontSize:12,fontWeight:700,padding:'3px 10px',borderRadius:12,background:freeToday>0?'rgba(45,138,78,.12)':'rgba(220,38,38,.1)',color:freeToday>0?'var(--green)':'var(--red)'}}>Свободни днес: {freeToday} от {ganttRows.length}</span>}
+            <div className="view-toggle">
+              <button className="view-btn" onClick={()=>shift(-7)}>‹</button>
+              <button className="view-btn" onClick={resetToday}>Днес</button>
+              <button className="view-btn" onClick={()=>shift(7)}>›</button>
+            </div>
+          </div>
+        </div>
+        {ganttRows.length===0?<p style={{fontSize:13,color:'var(--text2)'}}>Няма активни коли в регистъра.</p>:
+        <div style={{overflowX:'auto'}}>
+          <div style={{display:'grid',gridTemplateColumns:`130px repeat(${GANTT_DAYS},minmax(34px,1fr))`,gap:2,minWidth:640}}>
+            <div/>
+            {ganttDays.map((d,i)=>{const isToday=d.getTime()===today.getTime();const wknd=d.getDay()===0||d.getDay()===6;
+              return <div key={i} style={{textAlign:'center',fontSize:10,padding:'2px 0',borderRadius:4,background:isToday?'var(--accent)':'transparent',color:isToday?'#fff':wknd?'var(--orange)':'var(--text2)',fontWeight:isToday||wknd?700:400}}>
+                <div>{DOW[d.getDay()]}</div><div style={{fontSize:11}}>{d.getDate()}.{String(d.getMonth()+1).padStart(2,'0')}</div>
+              </div>})}
+            {ganttRows.map(r=><React.Fragment key={r.name}>
+              <div style={{fontSize:12,fontWeight:600,display:'flex',alignItems:'center',gap:4,overflow:'hidden',whiteSpace:'nowrap',textOverflow:'ellipsis'}} title={r.name+(r.seats?' ('+r.seats+')':'')}>{r.name}</div>
+              {r.days.map((segs,i)=>{const isToday=ganttDays[i].getTime()===today.getTime();
+                return <div key={i} title={segs.length?segs.map(s=>s.txt).join('\n'):'Свободна'} style={{height:26,borderRadius:4,display:'flex',flexDirection:'column',gap:1,padding:1,background:isToday?'rgba(79,70,229,.08)':'var(--card2)',cursor:segs.length?'help':'default'}}>
+                  {segs.slice(0,3).map((s,j)=><div key={j} style={{flex:1,borderRadius:2,background:COLORS[s.type]||'var(--text2)'}}/>)}
+                </div>})}
+            </React.Fragment>)}
+          </div>
+          <div style={{display:'flex',gap:14,marginTop:10,flexWrap:'wrap'}}>
+            {LEGEND.map(([k,l])=><span key={k} style={{fontSize:11,display:'flex',alignItems:'center',gap:5,color:'var(--text2)'}}><span style={{width:10,height:10,borderRadius:3,background:COLORS[k],display:'inline-block'}}/>{l}</span>)}
+            <span style={{fontSize:11,color:'var(--text2)'}}>Празна клетка = свободна · посочете клетка за детайли</span>
+          </div>
+        </div>}
+      </div>})()}
     <div className="stats-row">
       <div className="stat-card"><div className="label">Турове</div><div className="value blue">{totTours}</div></div>
       <div className="stat-card"><div className="label">Туристи</div><div className="value">{totPax}</div></div>

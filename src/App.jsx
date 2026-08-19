@@ -83,7 +83,7 @@ export default function App() {
 
   const renderPage = () => {
     switch (page) {
-      case 'dashboard': return <Dashboard tours={state.tours} guides={state.guides} fuel={state.fuel} carTasks={state.carTasks} vehicles={state.vehicles} fines={state.fines} stopsCarBus={state.stopsCarBus} stopsGuide={state.stopsGuide} catalog={state.catalog} carRentals={state.carRentals} roundTrips={state.roundTrips} />;
+      case 'dashboard': return <Dashboard tours={state.tours} serviceRecords={state.serviceRecords} guides={state.guides} fuel={state.fuel} carTasks={state.carTasks} vehicles={state.vehicles} fines={state.fines} stopsCarBus={state.stopsCarBus} stopsGuide={state.stopsGuide} catalog={state.catalog} carRentals={state.carRentals} roundTrips={state.roundTrips} />;
       case 'planning': return <PlanningPage tours={state.tours} setTours={state.setTours} carRentals={state.carRentals} roundTrips={state.roundTrips} vehicles={state.vehicles} guides={state.guides} stopsCarBus={state.stopsCarBus} serviceRecords={state.serviceRecords} />;
       case 'catalog': return <CatalogPage catalog={state.catalog} setCatalog={state.setCatalog} />;
       case 'tours': return <ToursPage tours={state.tours} setTours={state.setTours} guides={state.guides} catalog={state.catalog} vehicles={state.vehicles} roundTrips={state.roundTrips} stopsCarBus={state.stopsCarBus} tourLanguages={state.tourLanguages} setTourLanguages={state.setTourLanguages} carRentals={state.carRentals} />;
@@ -97,7 +97,7 @@ export default function App() {
       case 'stopsCarBus': return <StopsCarPage stops={state.stopsCarBus} setStops={state.setStopsCarBus} />;
       case 'carTasks': return <CarTasksPage tasks={state.carTasks} setTasks={state.setCarTasks} />;
       case 'fines': return <FinesPage fines={state.fines} setFines={state.setFines} />;
-      default: return <Dashboard tours={state.tours} guides={state.guides} fuel={state.fuel} carTasks={state.carTasks} vehicles={state.vehicles} fines={state.fines} stopsCarBus={state.stopsCarBus} stopsGuide={state.stopsGuide} catalog={state.catalog} carRentals={state.carRentals} roundTrips={state.roundTrips} />;
+      default: return <Dashboard tours={state.tours} serviceRecords={state.serviceRecords} guides={state.guides} fuel={state.fuel} carTasks={state.carTasks} vehicles={state.vehicles} fines={state.fines} stopsCarBus={state.stopsCarBus} stopsGuide={state.stopsGuide} catalog={state.catalog} carRentals={state.carRentals} roundTrips={state.roundTrips} />;
     }
   };
 

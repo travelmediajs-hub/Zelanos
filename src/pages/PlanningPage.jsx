@@ -254,11 +254,9 @@ function PlanningPage({tours,setTours,carRentals,roundTrips,vehicles,guides,stop
     Object.entries(toursByName).forEach(([name,group])=>{
       if(group.length<2)return;
       const totalPax=group.reduce((a,t)=>a+(t.adults||0)+(t.children||0),0);
-      // Check if already merged (all have same car, guide, driver)
-      const allSameCar=group.every(t=>t.carNumber&&t.carNumber===group[0].carNumber);
-      const allSameGuide=group.every(t=>t.guide&&t.guide===group[0].guide);
-      const allSameDriver=group.every(t=>t.driver&&t.driver===group[0].driver);
-      const alreadyMerged=allSameCar&&allSameGuide&&(allSameDriver||group.every(t=>t.guideIsDriver));
+      // "Готово" = всяка резервация има кола и гид — независимо дали е една
+      // обединена група или няколко отделни (напр. 3+2 с различни екипи)
+      const alreadyMerged=group.every(t=>t.carNumber&&t.guide);
       mergeGroups.push({name,tours:group,totalPax,alreadyMerged});
     });
     return{dayTours,dayRentals,dayRTList,noCar,noGuide,freeCars,freeGuides,conflicts,planned,unplanned,busyDrivers,dayRoundTrips,inServiceCars,mergeGroups};
@@ -454,7 +452,9 @@ function PlanningPage({tours,setTours,carRentals,roundTrips,vehicles,guides,stop
                 const existingGuide=mg.tours.find(t=>t.guide)?.guide||'';
                 const existingDriver=mg.tours.find(t=>t.driver)?.driver||'';
                 const existingGID=mg.tours.some(t=>t.guideIsDriver);
-                return <MergeCard key={i} mg={mg} ids={ids} fittingCars={fittingCars} fittingCarsGD={fittingCarsGD}
+                {/* key включва броя назначени — след обединяване картата се
+                    ремонтира и изборът се нулира към оставащите неназначени */}
+                return <MergeCard key={mg.name+'|'+mg.tours.filter(t=>t.carNumber).length} mg={mg} ids={ids} fittingCars={fittingCars} fittingCarsGD={fittingCarsGD}
                   existingCar={existingCar} existingGuide={existingGuide} existingDriver={existingDriver} existingGID={existingGID}
                   activeVehicles={activeVehicles} activeGuides={activeGuides} selData={selData} mergeTours={mergeTours} parseSeatsP={parseSeatsP}/>
               })}
@@ -463,7 +463,7 @@ function PlanningPage({tours,setTours,carRentals,roundTrips,vehicles,guides,stop
             {selData.mergeGroups.filter(mg=>mg.alreadyMerged).length>0&&<div style={{marginBottom:16}}>
               {selData.mergeGroups.filter(mg=>mg.alreadyMerged).map((mg,i)=>
                 <div key={i} style={{padding:'6px 10px',marginBottom:4,borderRadius:6,background:'rgba(45,138,78,.06)',border:'1px solid rgba(45,138,78,.2)',fontSize:11,color:'var(--green)',fontWeight:600}}>
-                  {'✅'} {mg.name} — {mg.tours.length} резервации обединени ({mg.totalPax} пакс)
+                  {'✅'} {mg.name} — {mg.tours.length} резервации разпределени ({mg.totalPax} пакс{(()=>{const cars=[...new Set(mg.tours.map(t=>t.carNumber))];return cars.length>1?', '+cars.length+' коли':''})()})
                 </div>
               )}
             </div>}

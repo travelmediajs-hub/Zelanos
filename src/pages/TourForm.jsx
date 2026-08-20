@@ -126,6 +126,21 @@ function TourForm({data,onSave,onCancel,guides,catalog,vehicles,allTours,roundTr
   const groupPax=thisPax+sameDayPax;
   const splitShare=(t)=>groupPax>0?totalExp*((t.adults||0)+(t.children||0))/groupPax:0;
   const splitIds=splitExp&&groupPax>0&&sameSlotTours.length>0?sameSlotTours.map(t=>t.id):null;
+  // Защита срещу дублиран Booking # — същият номер в друга (неотменена) резервация.
+  // Съвпадение при същия доставчик = почти сигурен дубликат → потвърждение при запис.
+  const dupBookings=useMemo(()=>{
+    const bn=(f.bookingNumber||'').trim().toLowerCase();
+    if(!bn||!allTours)return[];
+    return allTours.filter(t=>t.id!==f.id&&(t.bookingNumber||'').trim().toLowerCase()===bn&&(t.tourStatus||'reservation')!=='cancelled');
+  },[f.bookingNumber,f.id,allTours]);
+  const dupSameSupplier=dupBookings.filter(t=>(t.supplier||'').trim().toLowerCase()===(f.supplier||'').trim().toLowerCase());
+  const guardedSave=(payload)=>{
+    if(dupSameSupplier.length){
+      const d=dupSameSupplier[0];
+      if(!confirm('⚠️ ВНИМАНИЕ: Вече има резервация с Booking # "'+f.bookingNumber+'" от '+(d.supplier||'същия доставчик')+':\n\n'+(d.date||'без дата')+' — '+(d.tour||'')+' — '+(d.name||'без име')+'\n\nВероятно е дубликат! Запазване въпреки това?'))return;
+    }
+    onSave(payload,splitIds);
+  };
   return <div>
   <div style={{display:'flex',gap:12,marginBottom:16,alignItems:'center'}}>
     <div style={{flex:1}}>
@@ -191,7 +206,12 @@ function TourForm({data,onSave,onCancel,guides,catalog,vehicles,allTours,roundTr
       <div className="form-group"><label>Дата</label><input type="date" value={bgToISO(f.date)} onChange={e=>u('date',isoToBG(e.target.value))}/></div>
       <div className="form-group"><label>Час на взимане</label><input value={f.pickupTime} onChange={e=>u('pickupTime',e.target.value)}/></div>
       <div className="form-group"><label>Продавач</label><input value={f.supplier} onChange={e=>u('supplier',e.target.value)}/></div>
-      <div className="form-group"><label>Booking #</label><input value={f.bookingNumber} onChange={e=>u('bookingNumber',e.target.value)}/></div>
+      <div className="form-group"><label>Booking #</label><input value={f.bookingNumber} onChange={e=>u('bookingNumber',e.target.value)} style={{borderColor:dupSameSupplier.length?'var(--red)':dupBookings.length?'var(--orange)':''}}/>
+        {dupBookings.length>0&&<div style={{marginTop:4,padding:'6px 10px',borderRadius:6,fontSize:11,fontWeight:600,background:dupSameSupplier.length?'rgba(220,38,38,.1)':'rgba(234,88,12,.08)',border:'1px solid '+(dupSameSupplier.length?'rgba(192,57,43,.35)':'rgba(234,88,12,.25)'),color:dupSameSupplier.length?'var(--red)':'var(--orange)'}}>
+          {dupSameSupplier.length?'🚨 Дубликат! Този Booking # вече съществува от същия доставчик:':'⚠️ Този Booking # съществува при друг доставчик:'}
+          {dupBookings.slice(0,3).map((d,i)=><div key={i} style={{marginTop:2,fontWeight:400}}>• {d.date||'без дата'} — {d.tour||''} — {d.name||'без име'} ({d.supplier||'—'})</div>)}
+        </div>}
+      </div>
       <div className="form-group"><label>Име клиент</label><input value={f.name} onChange={e=>u('name',e.target.value)}/></div>
       <div className="form-group"><label>Телефон</label><input type="tel" value={f.clientPhone||''} onChange={e=>u('clientPhone',e.target.value)}/></div>
       <div className="form-group full"><label>Мейл</label><input type="email" value={f.clientEmail||''} onChange={e=>u('clientEmail',e.target.value)}/></div>
@@ -291,8 +311,8 @@ function TourForm({data,onSave,onCancel,guides,catalog,vehicles,allTours,roundTr
     </div>
     <div style={{display:'flex',gap:8}}>
       <button className="btn btn-ghost" onClick={onCancel}>Затвори</button>
-      <button className="btn btn-primary" disabled={!capacityOk||!slotOk} style={{opacity:capacityOk&&slotOk?1:.5,cursor:capacityOk&&slotOk?'pointer':'not-allowed'}} onClick={()=>{if(capacityOk&&slotOk)onSave(f,splitIds)}} title={!slotOk?'Колата вече има '+slotConflict+' тур на тази дата!':!capacityOk?'Капацитетът на колата е надвишен!':''}>💾 Запази</button>
-      {st!=='reported'&&st!=='cancelled'&&<button className="btn btn-primary" style={{background:canReport&&capacityOk&&slotOk?'var(--green)':'var(--border)',cursor:canReport&&capacityOk&&slotOk?'pointer':'not-allowed'}} disabled={!canReport||!capacityOk||!slotOk} onClick={()=>{if(canReport&&capacityOk&&slotOk)onSave({...f,tourStatus:'reported'},splitIds)}}>📊 Отчети тура</button>}
+      <button className="btn btn-primary" disabled={!capacityOk||!slotOk} style={{opacity:capacityOk&&slotOk?1:.5,cursor:capacityOk&&slotOk?'pointer':'not-allowed'}} onClick={()=>{if(capacityOk&&slotOk)guardedSave(f)}} title={!slotOk?'Колата вече има '+slotConflict+' тур на тази дата!':!capacityOk?'Капацитетът на колата е надвишен!':''}>💾 Запази</button>
+      {st!=='reported'&&st!=='cancelled'&&<button className="btn btn-primary" style={{background:canReport&&capacityOk&&slotOk?'var(--green)':'var(--border)',cursor:canReport&&capacityOk&&slotOk?'pointer':'not-allowed'}} disabled={!canReport||!capacityOk||!slotOk} onClick={()=>{if(canReport&&capacityOk&&slotOk)guardedSave({...f,tourStatus:'reported'})}}>📊 Отчети тура</button>}
     </div>
   </div></div>
 }

@@ -47,6 +47,18 @@ function Dashboard({tours,guides,fuel,carTasks,vehicles,fines,stopsCarBus,stopsG
       return{name:v.name,seats:v.seats,days};
     });
   },[vehicles,tours,roundTrips,carRentals,serviceRecords,stopsCarBus,ganttDays]);
+  // Дублирани Booking номера: същият номер от същия доставчик в няколко
+  // неотменени резервации = вероятно двойно въведена резервация
+  const dupBookings=useMemo(()=>{
+    const map={};
+    tours.forEach(t=>{
+      const bn=(t.bookingNumber||'').trim();
+      if(!bn||(t.tourStatus||'reservation')==='cancelled')return;
+      const key=(t.supplier||'').trim().toLowerCase()+'|'+bn.toLowerCase();
+      (map[key]=map[key]||[]).push(t);
+    });
+    return Object.values(map).filter(g=>g.length>1);
+  },[tours]);
   // Сравнение по години: пълни календарни години от всички турове,
   // независимо от избрания период — иначе сравнението е ябълки с круши
   const yearCompare=useMemo(()=>{
@@ -155,6 +167,19 @@ function Dashboard({tours,guides,fuel,carTasks,vehicles,fines,stopsCarBus,stopsG
           </div>
         </div>}
       </div>})()}
+    {dupBookings.length>0&&<div style={{marginBottom:20,background:'rgba(220,38,38,.05)',borderRadius:8,padding:16,border:'2px solid rgba(192,57,43,.35)'}}>
+      <h3 style={{fontSize:15,marginBottom:8,color:'var(--red)'}}>🚨 Дублирани Booking номера ({dupBookings.length})</h3>
+      <p style={{fontSize:12,color:'var(--text2)',marginBottom:10}}>Един и същ номер от същия доставчик в няколко резервации — вероятно двойно въведени. Клик върху резервация я отваря.</p>
+      {dupBookings.slice(0,8).map((g,i)=><div key={i} style={{padding:'8px 10px',marginBottom:6,borderRadius:6,background:'var(--card)',border:'1px solid var(--border)',fontSize:13}}>
+        <div style={{fontWeight:700,marginBottom:4}}>Booking # {g[0].bookingNumber} <span style={{fontWeight:400,color:'var(--text2)'}}>— {g[0].supplier||'без доставчик'} ({g.length} записа)</span></div>
+        <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+          {g.map(t=><span key={t.id} onClick={()=>onOpenRecord&&onOpenRecord('tours',{id:t.id})} style={{cursor:'pointer',padding:'3px 8px',borderRadius:4,fontSize:12,background:'rgba(220,38,38,.08)',border:'1px solid rgba(192,57,43,.2)'}} title="Клик за отваряне">
+            {t.date||'без дата'} — {(t.tour||'').replace(/ - [^-]+$/,'')||'—'} — {t.name||'без име'}
+          </span>)}
+        </div>
+      </div>)}
+      {dupBookings.length>8&&<div style={{fontSize:12,color:'var(--text2)'}}>… и още {dupBookings.length-8} групи</div>}
+    </div>}
     <div className="stats-row">
       <div className="stat-card"><div className="label">Турове</div><div className="value blue">{totTours}</div></div>
       <div className="stat-card"><div className="label">Туристи</div><div className="value">{totPax}</div></div>

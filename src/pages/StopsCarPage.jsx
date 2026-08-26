@@ -21,9 +21,14 @@ function StopsCarPage({stops,setStops,vehicles,openTarget,onOpenHandled}){
     {editing&&<Modal title={editing.id?"Редактирай":"Нов запис"} onClose={()=>setEditing(null)}>
       <div><div className="form-grid">
         <div className="form-group"><label>Номер бус/кола</label>
-          <input list="stop-vehicles" value={editing.vehicle} onChange={e=>setEditing(p=>({...p,vehicle:e.target.value}))} placeholder="избери или въведи..."/>
-          {/* Точното име от регистъра гарантира, че STOP-ът се вижда в Гант-а на таблото */}
-          <datalist id="stop-vehicles">{(vehicles||[]).filter(v=>v.active).map(v=><option key={v.id} value={v.name}/>)}</datalist>
+          {/* Избор от регистъра — точното име гарантира, че STOP-ът се вижда
+              в Гант-а на таблото. Стар запис с име извън регистъра се показва
+              като допълнителна опция, за да не се загуби при редакция. */}
+          <select value={editing.vehicle||''} onChange={e=>setEditing(p=>({...p,vehicle:e.target.value}))} style={{width:'100%'}}>
+            <option value="">— избери кола —</option>
+            {(vehicles||[]).filter(v=>v.active).map(v=><option key={v.id} value={v.name}>{v.name}{v.seats?' ('+v.seats+')':''}</option>)}
+            {editing.vehicle&&!(vehicles||[]).some(v=>v.name===editing.vehicle)&&<option value={editing.vehicle}>{editing.vehicle} (извън регистъра)</option>}
+          </select>
         </div>
         <div className="form-group"><label>Начална дата</label><input value={editing.startDate} onChange={e=>setEditing(p=>({...p,startDate:e.target.value}))}/></div>
         <div className="form-group"><label>Крайна дата</label><input value={editing.endDate} onChange={e=>setEditing(p=>({...p,endDate:e.target.value}))}/></div>

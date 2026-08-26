@@ -10,7 +10,11 @@ const sameCar=(a,b)=>String(a||'').trim().toLowerCase()===String(b||'').trim().t
 const fuzzyCar=(free,name)=>{
   if(!free||!name)return false;
   const a=String(free).toLowerCase().replace(/\s/g,''),b=String(name).toLowerCase().replace(/\s/g,'');
-  return a===b||(a.length>=4&&b.includes(a))||(b.length>=4&&a.includes(b));
+  if(a===b||(a.length>=4&&b.includes(a))||(b.length>=4&&a.includes(b)))return true;
+  // Съвпадение по цифрите: "4806" / "E klasa 4806" (латиница) ↔ "Е класа 4806".
+  // Хваща кирилица/латиница и частични имена — номерът е най-сигурният белег.
+  const da=a.replace(/\D/g,''),db=b.replace(/\D/g,'');
+  return da.length>=3&&da===db;
 };
 
 function Dashboard({tours,guides,fuel,carTasks,vehicles,fines,stopsCarBus,stopsGuide,catalog,carRentals,roundTrips,serviceRecords,onOpenRecord}){

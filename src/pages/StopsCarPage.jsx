@@ -1,10 +1,16 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Modal, ConfirmModal } from '../components/Modal'
 import { genId } from '../utils/helpers'
 
-function StopsCarPage({stops,setStops}){
+function StopsCarPage({stops,setStops,openTarget,onOpenHandled}){
   const [editing,setEditing]=useState(null);const [delId,setDelId]=useState(null);
   const blank={vehicle:'',startDate:'',endDate:'',who:'',notes:''};
+  // Дълбока навигация от таблото: предпопълнен нов STOP от избрани дни в Гант-а
+  useEffect(()=>{
+    if(!openTarget)return;
+    if(openTarget.create)setEditing({...blank,...openTarget.create});
+    onOpenHandled&&onOpenHandled();
+  },[openTarget]);
   const save=(form)=>{if(form.id){setStops(p=>p.map(s=>s.id===form.id?form:s))}else{setStops(p=>[...p,{...form,id:genId(p)}])};setEditing(null)};
   const del=()=>{setStops(p=>p.filter(s=>s.id!==delId));setDelId(null)};
   return <div>

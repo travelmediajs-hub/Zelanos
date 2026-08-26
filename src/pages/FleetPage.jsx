@@ -87,11 +87,13 @@ function FleetPage({tours,fuel,fines,carTasks,stopsCarBus,vehicles,setVehicles,s
 
   // Дълбока навигация от таблото: отваря досието на конкретна кола.
   // Кола без нито един тур/задача/зареждане я няма в cars → минимален обект.
+  // openTarget.service = предпопълнен нов сервизен запис от избрани дни в Гант-а.
   useEffect(()=>{
     if(!openTarget||!openTarget.car)return;
     const c=cars.find(x=>x.name===openTarget.car)
       ||{name:openTarget.car,tourDays:0,bookings:0,pax:0,rev:0,exp:0,expGuide:0,expDriver:0,expFuel:0,expOther:0,profit:0,tours:[]};
     setSelectedCar(c);
+    if(openTarget.service)setServiceEditing({...blankService,carName:openTarget.car,date:openTarget.service.date||'',dateOut:openTarget.service.dateOut||''});
     onOpenHandled&&onOpenHandled();
   },[openTarget,cars]);
 

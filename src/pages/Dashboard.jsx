@@ -14,6 +14,13 @@ function Dashboard({tours,guides,fuel,carTasks,vehicles,fines,stopsCarBus,stopsG
   // Гант "Заетост на колите": прозорец от GANTT_DAYS дни, местим с ‹ › по седмица
   const GANTT_DAYS=14;
   const [ganttStart,setGanttStart]=useState(()=>{const d=new Date();d.setHours(0,0,0,0);return d});
+  // Избор на дни в Гант-а: {car, a, b} — индекси в ganttDays. Първи клик на
+  // празна клетка започва избора, следващ клик на същия ред разширява диапазона.
+  const [ganttSel,setGanttSel]=useState(null);
+  const ganttCellClick=(car,i)=>setGanttSel(p=>{
+    if(p&&p.car===car&&p.a===i&&p.b===i)return null; // клик върху единствената избрана клетка = отказ
+    return p&&p.car===car?{car,a:p.a,b:i}:{car,a:i,b:i};
+  });
   const ganttDays=useMemo(()=>Array.from({length:GANTT_DAYS},(_,i)=>new Date(ganttStart.getFullYear(),ganttStart.getMonth(),ganttStart.getDate()+i)),[ganttStart]);
   const ganttRows=useMemo(()=>{
     return (vehicles||[]).filter(v=>v.active).map(v=>{
@@ -131,8 +138,10 @@ function Dashboard({tours,guides,fuel,carTasks,vehicles,fines,stopsCarBus,stopsG
       const DOW=['Нд','Пн','Вт','Ср','Чт','Пт','Сб'];
       const todayIdx=ganttDays.findIndex(d=>d.getTime()===today.getTime());
       const freeToday=todayIdx>=0?ganttRows.filter(r=>r.days[todayIdx].length===0).length:null;
-      const shift=(n)=>setGanttStart(p=>new Date(p.getFullYear(),p.getMonth(),p.getDate()+n));
-      const resetToday=()=>{const d=new Date();d.setHours(0,0,0,0);setGanttStart(d)};
+      const shift=(n)=>{setGanttSel(null);setGanttStart(p=>new Date(p.getFullYear(),p.getMonth(),p.getDate()+n))};
+      const resetToday=()=>{const d=new Date();d.setHours(0,0,0,0);setGanttSel(null);setGanttStart(d)};
+      const selLo=ganttSel?Math.min(ganttSel.a,ganttSel.b):-1;
+      const selHi=ganttSel?Math.max(ganttSel.a,ganttSel.b):-1;
       return <div style={{marginBottom:20,background:'var(--card)',borderRadius:8,padding:16,border:'1px solid var(--border)'}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10,flexWrap:'wrap',gap:8}}>
           <h3 style={{fontSize:16}}>🚐 Заетост на колите</h3>
@@ -156,14 +165,29 @@ function Dashboard({tours,guides,fuel,carTasks,vehicles,fines,stopsCarBus,stopsG
             {ganttRows.map(r=><React.Fragment key={r.name}>
               <div style={{fontSize:12,fontWeight:600,display:'flex',alignItems:'center',gap:4,overflow:'hidden',whiteSpace:'nowrap',textOverflow:'ellipsis'}} title={r.name+(r.seats?' ('+r.seats+')':'')}>{r.name}</div>
               {r.days.map((segs,i)=>{const isToday=ganttDays[i].getTime()===today.getTime();
-                return <div key={i} title={segs.length?undefined:'Свободна'} style={{height:26,borderRadius:4,display:'flex',flexDirection:'column',gap:1,padding:1,background:isToday?'rgba(79,70,229,.08)':'var(--card2)'}}>
+                const isSel=ganttSel&&ganttSel.car===r.name&&i>=selLo&&i<=selHi;
+                return <div key={i} title={segs.length?undefined:'Свободна — клик за избор на дни (наем/сервиз/STOP)'} onClick={segs.length?undefined:()=>ganttCellClick(r.name,i)} style={{height:26,borderRadius:4,display:'flex',flexDirection:'column',gap:1,padding:1,background:isSel?'rgba(234,88,12,.25)':isToday?'rgba(79,70,229,.08)':'var(--card2)',border:isSel?'1px solid var(--orange)':'1px solid transparent',cursor:segs.length?'default':'pointer'}}>
                   {segs.slice(0,3).map((s,j)=><div key={j} title={s.txt+'\n(клик за отваряне)'} onClick={()=>onOpenRecord&&onOpenRecord(s.page,s.target)} style={{flex:1,borderRadius:2,background:COLORS[s.type]||'var(--text2)',cursor:'pointer'}}/>)}
                 </div>})}
             </React.Fragment>)}
           </div>
+          {ganttSel&&(()=>{
+            const d1=fmtBG(ganttDays[selLo]),d2=fmtBG(ganttDays[selHi]);
+            const nDays=selHi-selLo+1;
+            const go=(page,target)=>{setGanttSel(null);onOpenRecord&&onOpenRecord(page,target)};
+            return <div style={{marginTop:10,padding:'10px 12px',borderRadius:8,background:'rgba(234,88,12,.06)',border:'1px solid rgba(234,88,12,.3)',display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
+              <span style={{fontSize:13,fontWeight:700}}>{ganttSel.car}: {d1}{selHi>selLo?' – '+d2:''} <span style={{fontWeight:400,color:'var(--text2)'}}>({nDays} {nDays===1?'ден':'дни'})</span></span>
+              <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                <button className="btn btn-primary btn-sm" onClick={()=>go('carRental',{create:{vehicle:ganttSel.car,dateFrom:d1,dateTo:d2}})}>🔑 Нов наем</button>
+                <button className="btn btn-primary btn-sm" style={{background:'var(--red)'}} onClick={()=>go('fleet',{car:ganttSel.car,service:{date:d1,dateOut:d2}})}>🔧 Сервиз</button>
+                <button className="btn btn-primary btn-sm" style={{background:'var(--text2)'}} onClick={()=>go('stopsCarBus',{create:{vehicle:ganttSel.car,startDate:d1,endDate:d2}})}>⛔ STOP</button>
+                <button className="btn btn-ghost btn-sm" onClick={()=>setGanttSel(null)}>✕ Отказ</button>
+              </div>
+              <span style={{fontSize:11,color:'var(--text2)',width:'100%'}}>Клик на друга празна клетка от същия ред разширява периода.</span>
+            </div>})()}
           <div style={{display:'flex',gap:14,marginTop:10,flexWrap:'wrap'}}>
             {LEGEND.map(([k,l])=><span key={k} style={{fontSize:11,display:'flex',alignItems:'center',gap:5,color:'var(--text2)'}}><span style={{width:10,height:10,borderRadius:3,background:COLORS[k],display:'inline-block'}}/>{l}</span>)}
-            <span style={{fontSize:11,color:'var(--text2)'}}>Празна клетка = свободна · посочете клетка за детайли</span>
+            <span style={{fontSize:11,color:'var(--text2)'}}>Празна клетка = свободна, клик я избира за наем/сервиз/STOP · заетите блокчета се отварят с клик</span>
           </div>
         </div>}
       </div>})()}

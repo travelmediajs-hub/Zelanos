@@ -4,11 +4,12 @@ import { genId, parseDate, calcDays, bgToISO, isoToBG, serviceCoversDay } from '
 
 function CarRentalPage({rentals,setRentals,vehicles,roundTrips,stopsCarBus,tours,serviceRecords,openTarget,onOpenHandled}){
   const [search,setSearch]=useState('');const [editing,setEditing]=useState(null);const [delId,setDelId]=useState(null);
-  // Дълбока навигация от таблото: отваря конкретен наем за редакция
+  // Дълбока навигация от таблото: отваря наем за редакция (id) или
+  // предпопълнен нов наем от избрани дни в Гант-а (create)
   useEffect(()=>{
-    if(!openTarget||!openTarget.id)return;
-    const r=rentals.find(x=>x.id===openTarget.id);
-    if(r)setEditing({...r});
+    if(!openTarget)return;
+    if(openTarget.create){setEditing({...blank,...openTarget.create})}
+    else if(openTarget.id){const r=rentals.find(x=>x.id===openTarget.id);if(r)setEditing({...r})}
     onOpenHandled&&onOpenHandled();
   },[openTarget]);
   const filtered=useMemo(()=>{const s=search.toLowerCase();return !s?rentals:rentals.filter(r=>(r.client||'').toLowerCase().includes(s)||(r.vehicle||'').toLowerCase().includes(s)||(r.dateFrom||'').includes(s))},[rentals,search]);

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Modal, ConfirmModal } from '../components/Modal'
 import { genId } from '../utils/helpers'
 
-function StopsCarPage({stops,setStops,openTarget,onOpenHandled}){
+function StopsCarPage({stops,setStops,vehicles,openTarget,onOpenHandled}){
   const [editing,setEditing]=useState(null);const [delId,setDelId]=useState(null);
   const blank={vehicle:'',startDate:'',endDate:'',who:'',notes:''};
   // Дълбока навигация от таблото: предпопълнен нов STOP от избрани дни в Гант-а
@@ -20,7 +20,11 @@ function StopsCarPage({stops,setStops,openTarget,onOpenHandled}){
       <td style={{whiteSpace:'nowrap'}}><button className="btn btn-ghost btn-sm" onClick={()=>setEditing({...s})}>✎</button>{' '}<button className="btn btn-danger btn-sm" onClick={()=>setDelId(s.id)}>✕</button></td></tr>)}</tbody></table></div>
     {editing&&<Modal title={editing.id?"Редактирай":"Нов запис"} onClose={()=>setEditing(null)}>
       <div><div className="form-grid">
-        <div className="form-group"><label>Номер бус/кола</label><input value={editing.vehicle} onChange={e=>setEditing(p=>({...p,vehicle:e.target.value}))}/></div>
+        <div className="form-group"><label>Номер бус/кола</label>
+          <input list="stop-vehicles" value={editing.vehicle} onChange={e=>setEditing(p=>({...p,vehicle:e.target.value}))} placeholder="избери или въведи..."/>
+          {/* Точното име от регистъра гарантира, че STOP-ът се вижда в Гант-а на таблото */}
+          <datalist id="stop-vehicles">{(vehicles||[]).filter(v=>v.active).map(v=><option key={v.id} value={v.name}/>)}</datalist>
+        </div>
         <div className="form-group"><label>Начална дата</label><input value={editing.startDate} onChange={e=>setEditing(p=>({...p,startDate:e.target.value}))}/></div>
         <div className="form-group"><label>Крайна дата</label><input value={editing.endDate} onChange={e=>setEditing(p=>({...p,endDate:e.target.value}))}/></div>
         <div className="form-group full"><label>Кой го взима</label><input value={editing.who} onChange={e=>setEditing(p=>({...p,who:e.target.value}))}/></div>

@@ -5,6 +5,13 @@ import { parseDate, parseDateISO, presetRange, fmtBG, serviceCoversDay, MONTHS }
 const parseAnyDate=(s)=>parseDate(s)||parseDateISO(s);
 // Сравнение на имена на коли, устойчиво на разлики в интервали/главни букви
 const sameCar=(a,b)=>String(a||'').trim().toLowerCase()===String(b||'').trim().toLowerCase();
+// Хлабаво съпоставяне за свободен текст (STOP записите) — както в Автопарка:
+// "CB1234AK" съвпада с "Опел Виваро CB1234AK" и обратно
+const fuzzyCar=(free,name)=>{
+  if(!free||!name)return false;
+  const a=String(free).toLowerCase().replace(/\s/g,''),b=String(name).toLowerCase().replace(/\s/g,'');
+  return a===b||(a.length>=4&&b.includes(a))||(b.length>=4&&a.includes(b));
+};
 
 function Dashboard({tours,guides,fuel,carTasks,vehicles,fines,stopsCarBus,stopsGuide,catalog,carRentals,roundTrips,serviceRecords,onOpenRecord}){
   const [preset,setPreset]=useState('all');
@@ -45,7 +52,7 @@ function Dashboard({tours,guides,fuel,carTasks,vehicles,fines,stopsCarBus,stopsG
           if(sameCar(sr.carName,v.name)&&serviceCoversDay(sr,day))segs.push({type:'service',txt:'🔧 Сервиз'+(sr.description?': '+sr.description:''),page:'fleet',target:{car:v.name}});
         });
         (stopsCarBus||[]).forEach(s=>{
-          if(!sameCar(s.vehicle,v.name))return;
+          if(!fuzzyCar(s.vehicle,v.name))return;
           const f=parseAnyDate(s.startDate),to=parseAnyDate(s.endDate);
           if(f&&to&&day>=f&&day<=to)segs.push({type:'service',txt:'⛔ STOP'+(s.who?': '+s.who:''),page:'fleet',target:{car:v.name}});
         });

@@ -99,7 +99,7 @@ export default function App() {
       case 'carRental': return <CarRentalPage rentals={state.carRentals} openTarget={targetFor("carRental")} onOpenHandled={clearOpenTarget} setRentals={state.setCarRentals} vehicles={state.vehicles} roundTrips={state.roundTrips} stopsCarBus={state.stopsCarBus} tours={state.tours} serviceRecords={state.serviceRecords} />;
       case 'roundTrips': return <RoundTripsPage roundTrips={state.roundTrips} openTarget={targetFor("roundTrips")} onOpenHandled={clearOpenTarget} setRoundTrips={state.setRoundTrips} vehicles={state.vehicles} guides={state.guides} tours={state.tours} carRentals={state.carRentals} stopsCarBus={state.stopsCarBus} />;
       case 'fuel': return <FuelPage fuel={state.fuel} setFuel={state.setFuel} />;
-      case 'stopsCarBus': return <StopsCarPage stops={state.stopsCarBus} openTarget={targetFor("stopsCarBus")} onOpenHandled={clearOpenTarget} setStops={state.setStopsCarBus} />;
+      case 'stopsCarBus': return <StopsCarPage stops={state.stopsCarBus} vehicles={state.vehicles} openTarget={targetFor("stopsCarBus")} onOpenHandled={clearOpenTarget} setStops={state.setStopsCarBus} />;
       case 'carTasks': return <CarTasksPage tasks={state.carTasks} setTasks={state.setCarTasks} />;
       case 'fines': return <FinesPage fines={state.fines} setFines={state.setFines} />;
       default: return <Dashboard tours={state.tours} onOpenRecord={openRecord} serviceRecords={state.serviceRecords} guides={state.guides} fuel={state.fuel} carTasks={state.carTasks} vehicles={state.vehicles} fines={state.fines} stopsCarBus={state.stopsCarBus} stopsGuide={state.stopsGuide} catalog={state.catalog} carRentals={state.carRentals} roundTrips={state.roundTrips} />;
